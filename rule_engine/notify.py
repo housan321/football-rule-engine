@@ -130,8 +130,8 @@ def send_actionable_email(
 ) -> int:
     """Send one email listing only this run's actionable fixtures.
 
-    The optional attachment is a per-run Excel built from the new actionable
-    rows; the cumulative paper_tracking.xlsx is never attached.
+    The optional attachment is a per-run CSV built from the new actionable
+    rows; the cumulative paper_tracking.csv is never attached.
 
     Returns the number of actionable fixtures included.
     """
@@ -152,8 +152,8 @@ def send_actionable_email(
         filename, payload = attachment
         message.add_attachment(
             payload,
-            maintype="application",
-            subtype="vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            maintype="text",
+            subtype="csv",
             filename=filename,
         )
 

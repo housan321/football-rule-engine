@@ -3,4 +3,3 @@ __pycache__/
 .env
 out/*.html
 out/*.json
-tracking/*.xlsx

@@ -290,9 +290,9 @@ python -m rule_engine run --dates 2026-11-05,2026-11-06 --leagues 103,350 --max-
 不只是新发现场次。赛程页日期不一定等于北京时间开赛日，扫描会同时读取**前一天**页面，
 避免漏掉 00:xx / 01:00 的比赛。`--skip-import` 时只查数据库已有比赛；
 `--leagues` 同时作用于赛程发现和数据库刷新；
-亚盘核心公司 <2 或欧赔公司 <2 的场次标记 `[skip]`，不生成 HTML/JSON，也不写入 Excel。
+亚盘核心公司 <2 或欧赔公司 <2 的场次标记 `[skip]`，不生成 HTML/JSON，也不写入 CSV。
 
-`run` 等价于先执行 `python -m rule_engine import --ids ...`，再执行 `python -m rule_engine analyze --ids ...`，并默认把 `actionable=是` 的场次追加到 `tracking/paper_tracking.xlsx`。用 `--no-track` 关闭 Excel 跟踪，`--excel` 指定其他路径。
+`run` 等价于先执行 `python -m rule_engine import --ids ...`，再执行 `python -m rule_engine analyze --ids ...`，并默认把 `actionable=是` 的场次追加到 `tracking/paper_tracking.csv`。用 `--no-track` 关闭 CSV 跟踪，`--excel` 指定其他路径。
 
 常用开关：
 
@@ -356,28 +356,28 @@ python -m rule_engine analyze --ids 3010473 --decision-minutes 60 --only-giving 
 - 输出新增：`side_line`、`is_giving`、`experimental_default`、`actionable`、`filter_notes`。
 - 当前代码默认没有改变；必须显式传参才启用实验 gate。
 
-### 6.5 纸面跟踪 Excel
+### 6.5 纸面跟踪 CSV
 
-`run` 默认会写 Excel；`track` 是只做跟踪、不写 HTML 的轻量命令。
+`run` 默认会写 CSV；`track` 是只做跟踪、不写 HTML 的轻量命令。
 
 ```bash
-# 一键：导入 + 分析全部 + 写 Excel（推荐）
+# 一键：导入 + 分析全部 + 写 CSV（推荐）
 python -m rule_engine run --ids 3010473 --experimental-default
 python -m rule_engine run --dates 2026-11-07 --leagues 25 --experimental-default
 
 # 只跟踪，不写 HTML
-python -m rule_engine track --ids 3010473 --excel tracking/paper_tracking.xlsx
-python -m rule_engine track --dates 2026-11-07 --leagues 25 --excel tracking/paper_tracking.xlsx
+python -m rule_engine track --ids 3010473 --excel tracking/paper_tracking.csv
+python -m rule_engine track --dates 2026-11-07 --leagues 25 --excel tracking/paper_tracking.csv
 
 # 比赛结束后回填 result / profit / CLV
-python -m rule_engine track-update --excel tracking/paper_tracking.xlsx
+python -m rule_engine track-update --excel tracking/paper_tracking.csv
 ```
 
 - 默认只记录 `actionable=是`；`--include-non-actionable` 可记录全部。
 - 默认 `only-giving + conf>=50 + T-60`；`--all-sides` / `--min-confidence` / `--as-of` 可覆盖。
 - 以 `(analysis_at, fixture_id)` 去重；重复运行只更新，已回填的 result/CLV 不覆盖。
-- Excel 字段：分析时间、比赛、方向、side_line、让球方、置信度、实验默认、可下注、操作、引擎盘口、下注水位、result、profit、CLV盘口/水位/有利、备注、回填时间。
-- 依赖 `openpyxl`。
+- CSV 字段：分析时间、比赛、方向、side_line、让球方、置信度、实验默认、可下注、操作、引擎盘口、下注水位、result、profit、CLV盘口/水位/有利、备注、回填时间。
+- CSV 使用 UTF-8 with BOM（`utf-8-sig`），Excel/WPS 可直接打开；不再依赖 `openpyxl`。
 
 ---
 
@@ -568,11 +568,11 @@ python -m rule_engine track-update --excel tracking/paper_tracking.xlsx
 
 1. 读 `data/schedule_cache.json`（含 `league` 联赛名、`home` 主队、`away` 客队）；
 2. 每天 11:00 / 16:00（北京时间）之后第一次运行刷新缓存，爬 D-1 / D / D+1 赛程页；
-3. 刷新成功后顺带结算已结束场次，回填 `result` / `profit` / CLV 到 `paper_tracking.xlsx`，并同步 `actionable_*.json`；
+3. 刷新成功后顺带结算已结束场次，回填 `result` / `profit` / CLV 到 `paper_tracking.csv`，并同步 `actionable_*.json`；
 4. 筛选未来 60 分钟内开赛、当天尚未分析过的比赛；
 5. 只导入这些比赛的赔率，按 T-60 + 只做让球方 + conf≥50 分析；
 6. 赔率不足的场次跳过；
-7. 有 `actionable=是` 时写 Excel、`tracking/actionable_YYYY-MM-DD.json`，邮件只发本轮新增 actionable；
+7. 有 `actionable=是` 时写 CSV、`tracking/actionable_YYYY-MM-DD.json`，邮件只发本轮新增 actionable；
 8. 更新 `data/scheduler_state.json` 去重；
 9. 把 `data/` 与 `tracking/` 的结果提交回仓库（需要 `contents: write`）。
 
@@ -623,7 +623,7 @@ python -m rule_engine track-update --excel tracking/paper_tracking.xlsx
 注意：
 
 - GitHub host runner 无法访问本机 `127.0.0.1` 的 MySQL；工作流使用 job 内临时 MySQL，所以不需要云数据库。
-- 每次运行是独立容器/文件，`paper_tracking.xlsx` **不会跨运行累计**；当前方案是每次邮件附件 + artifact。
+- 每次运行的 MySQL 是临时容器，但 `paper_tracking.csv` / `actionable_*.json` 会提交回仓库，所以可以跨运行累计；邮件附件只包含本轮新增场次，artifact 作为额外备份。
 - cron-job.org 触发可能有少量延迟，GitHub Actions 本身也可能排队。
 - 外部 `workflow_dispatch` 不受 GitHub 公共仓库“60 天无活动暂停 schedule”的限制；私有仓库仍会消耗 Actions 分钟数。
 - 本地测试邮件：

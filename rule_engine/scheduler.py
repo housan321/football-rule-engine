@@ -13,14 +13,14 @@ from .ingest import crawl
 from .ingest.all import main as ingest_main
 from .leagues import LEAGUE_IDS
 from .notify import email_config_from_env, send_actionable_email
-from .tracker import append_rows, build_actionable_workbook, result_to_tracker_row
+from .tracker import append_rows, build_actionable_csv, result_to_tracker_row
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "data"
 TRACKING_DIR = ROOT / "tracking"
 CACHE_PATH = DATA_DIR / "schedule_cache.json"
 STATE_PATH = DATA_DIR / "scheduler_state.json"
-EXCEL_PATH = TRACKING_DIR / "paper_tracking.xlsx"
+TRACKER_PATH = TRACKING_DIR / "paper_tracking.csv"
 
 TZ = ZoneInfo(os.environ.get("APP_TIMEZONE", "Asia/Shanghai"))
 REFRESH_HOURS = (11, 16)  # Beijing time: refresh the schedule cache after 11:00 / 16:00
@@ -307,8 +307,8 @@ def run_once(now: datetime) -> int:
     if actionable:
         rows = [result_to_tracker_row(result) for result in actionable]
         try:
-            added, updated = append_rows(EXCEL_PATH, rows)
-            print(f"  tracker: added={added} updated={updated} -> {EXCEL_PATH}")
+            added, updated = append_rows(TRACKER_PATH, rows)
+            print(f"  tracker: added={added} updated={updated} -> {TRACKER_PATH}")
         except OSError as exc:
             print(f"  [warn] tracker write failed: {exc}")
         json_path = append_actionable_json(actionable, now)
@@ -320,8 +320,8 @@ def run_once(now: datetime) -> int:
         else:
             try:
                 attachment = (
-                    f"actionable_{now.strftime('%Y-%m-%d_%H%M')}.xlsx",
-                    build_actionable_workbook(rows),
+                    f"actionable_{now.strftime('%Y-%m-%d_%H%M')}.csv",
+                    build_actionable_csv(rows),
                 )
                 print(
                     f"  [email] smtp {email_cfg.host}:{email_cfg.port} "

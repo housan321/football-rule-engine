@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 import json
 import tempfile
 import unittest
@@ -7,30 +8,24 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from unittest.mock import patch
 
-from openpyxl import Workbook
-
 from rule_engine import settle
-from rule_engine.tracker import COLUMNS, SHEET
+from rule_engine.tracker import COLUMNS
 
 
 def make_tracker(path: Path, rows: list[dict]) -> None:
-    wb = Workbook()
-    ws = wb.active
-    ws.title = SHEET
-    col = {key: idx for idx, (key, _label) in enumerate(COLUMNS, 1)}
-    for key, idx in col.items():
-        ws.cell(1, idx, dict(COLUMNS)[key])
-    for row_no, row in enumerate(rows, 2):
-        for key, value in row.items():
-            ws.cell(row_no, col[key], value)
-    wb.save(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8-sig", newline="") as fh:
+        writer = csv.writer(fh)
+        writer.writerow([label for _key, label in COLUMNS])
+        for row in rows:
+            writer.writerow([row.get(key, "") for key, _label in COLUMNS])
 
 
 class SettleTests(unittest.TestCase):
     def test_pending_fixture_ids(self):
         now = datetime(2026, 11, 8, 12, 0)
         with tempfile.TemporaryDirectory() as tmp:
-            path = Path(tmp) / "paper_tracking.xlsx"
+            path = Path(tmp) / "paper_tracking.csv"
             make_tracker(
                 path,
                 [
@@ -72,9 +67,9 @@ class SettleTests(unittest.TestCase):
     def test_sync_actionable_json(self):
         with tempfile.TemporaryDirectory() as tmp:
             tracking = Path(tmp)
-            excel = tracking / "paper_tracking.xlsx"
+            tracker = tracking / "paper_tracking.csv"
             make_tracker(
-                excel,
+                tracker,
                 [
                     {
                         "fixture_id": 1,
@@ -104,7 +99,7 @@ class SettleTests(unittest.TestCase):
                 encoding="utf-8",
             )
             with patch.object(settle, "TRACKING_DIR", tracking), patch.object(
-                settle, "EXCEL_PATH", excel
+                settle, "TRACKER_PATH", tracker
             ):
                 changed = settle.sync_actionable_json(datetime(2026, 11, 8, 13, 0))
             self.assertEqual(changed, 1)

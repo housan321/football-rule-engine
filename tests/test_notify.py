@@ -165,14 +165,15 @@ class NotifyTests(unittest.TestCase):
             sent = send_actionable_email(
                 [make_result(True), make_result(False)],
                 cfg,
-                attachment=("per_run.xlsx", b"only-new-rows"),
+                attachment=("per_run.csv", b"only-new-rows"),
             )
 
         self.assertEqual(sent, 1)
         message = sent_messages[0]
         attachments = list(message.iter_attachments())
         self.assertEqual(len(attachments), 1)
-        self.assertEqual(attachments[0].get_filename(), "per_run.xlsx")
+        self.assertEqual(attachments[0].get_filename(), "per_run.csv")
+        self.assertEqual(attachments[0].get_content_type(), "text/csv")
         self.assertEqual(attachments[0].get_payload(decode=True), b"only-new-rows")
 
     def test_send_failure_reports_stage_not_quit_error(self):

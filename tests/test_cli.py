@@ -108,7 +108,7 @@ class CliTests(unittest.TestCase):
         argv = _build_ingest_argv(args, [1])
         self.assertIn("--no-save", argv)
 
-    def test_run_parser_tracks_excel_by_default(self):
+    def test_run_parser_tracks_csv_by_default(self):
         from rule_engine.cli import build_parser
         from rule_engine.tracker import DEFAULT_TRACKER_PATH
 

@@ -30,7 +30,7 @@ from .report import write_outputs
 from .tracker import (
     DEFAULT_TRACKER_PATH,
     append_rows as append_tracker_rows,
-    build_actionable_workbook,
+    build_actionable_csv,
     result_to_tracker_row,
     update_tracking_results,
 )
@@ -537,7 +537,7 @@ def cmd_run(args) -> int:
             tracked_added, tracked_updated = append_tracker_rows(args.excel, rows)
         except OSError as exc:
             print(
-                f"[warn] Excel 写入失败（可能文件被占用）: {exc}",
+                f"[warn] CSV 写入失败（可能文件被占用）: {exc}",
                 file=sys.stderr,
             )
 
@@ -552,8 +552,8 @@ def cmd_run(args) -> int:
         else:
             try:
                 attachment = (
-                    f"actionable_{datetime.now():%Y-%m-%d_%H%M}.xlsx",
-                    build_actionable_workbook(rows),
+                    f"actionable_{datetime.now():%Y-%m-%d_%H%M}.csv",
+                    build_actionable_csv(rows),
                 )
                 sent = send_actionable_email(
                     results, email_cfg, attachment=attachment
@@ -600,7 +600,7 @@ def cmd_run(args) -> int:
 
 
 def cmd_track(args) -> int:
-    """Analyze fixtures and append actionable gate bets to an Excel tracker."""
+    """Analyze fixtures and append actionable gate bets to a CSV tracker."""
     if args.leagues and not args.dates:
         print("[error] --leagues requires --dates", file=sys.stderr)
         return 2
@@ -657,12 +657,12 @@ def cmd_track(args) -> int:
     except OSError as exc:
         added = updated = 0
         print(
-            f"[warn] Excel 写入失败（可能文件被占用）: {exc}",
+            f"[warn] CSV 写入失败（可能文件被占用）: {exc}",
             file=sys.stderr,
         )
     print(
         f"\nanalyzed {len(fixture_ids)} | actionable={actionable} | "
-        f"excel added={added} updated={updated} | {args.excel}"
+        f"tracker added={added} updated={updated} | {args.excel}"
     )
     return 1 if failures else 0
 
@@ -823,7 +823,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_run = sub.add_parser(
         "run",
-        help="import odds, analyze all fixtures, and append actionable bets to Excel",
+        help="import odds, analyze all fixtures, and append actionable bets to CSV",
     )
     run_ids = p_run.add_mutually_exclusive_group(required=True)
     run_ids.add_argument("--fixture-id", type=int, help="single fixture id")
@@ -888,11 +888,11 @@ def build_parser() -> argparse.ArgumentParser:
     p_run.add_argument("--json-only", action="store_true")
     p_run.add_argument(
         "--excel", default=DEFAULT_TRACKER_PATH,
-        help=f"Excel paper-tracking file (default: {DEFAULT_TRACKER_PATH})",
+        help=f"CSV paper-tracking file (default: {DEFAULT_TRACKER_PATH})",
     )
     p_run.add_argument(
         "--no-track", action="store_true",
-        help="do not append actionable bets to the Excel tracker",
+        help="do not append actionable bets to the CSV tracker",
     )
     p_run.add_argument(
         "--no-report", action="store_true",
@@ -968,7 +968,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_bt.set_defaults(func=cmd_backtest)
 
     p_track = sub.add_parser(
-        "track", help="paper-track actionable experimental-gate bets into Excel"
+        "track", help="paper-track actionable experimental-gate bets into CSV"
     )
     track_ids = p_track.add_mutually_exclusive_group(required=True)
     track_ids.add_argument("--fixture-id", type=int)
@@ -996,7 +996,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_track.set_defaults(func=cmd_track)
 
     p_upd = sub.add_parser(
-        "track-update", help="fill result/profit/CLV in the Excel tracker"
+        "track-update", help="fill result/profit/CLV in the CSV tracker"
     )
     p_upd.add_argument("--excel", default=DEFAULT_TRACKER_PATH)
     p_upd.add_argument("--database")

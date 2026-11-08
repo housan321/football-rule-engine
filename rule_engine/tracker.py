@@ -1,22 +1,19 @@
 from __future__ import annotations
 
+import csv
+import io
+import os
 from datetime import datetime
-from io import BytesIO
 from pathlib import Path
-from typing import Optional
-
-from openpyxl import Workbook, load_workbook
-from openpyxl.styles import Alignment, Font, PatternFill
-from openpyxl.utils import get_column_letter
 
 from .db import fetch_asian, fetch_match
 from .engine import AnalysisResult
 from .features import build_asian_features, build_company_views
 from .settlement import settle_asian
 
-SHEET = "paper_tracking"
-LEGACY_INFO_SHEET = "说明"
-DEFAULT_TRACKER_PATH = "tracking/paper_tracking.xlsx"
+DEFAULT_TRACKER_PATH = "tracking/paper_tracking.csv"
+# Write a BOM so Excel/WPS on Windows detect UTF-8 and show Chinese correctly.
+CSV_ENCODING = "utf-8-sig"
 
 COLUMNS: list[tuple[str, str]] = [
     ("analysis_at", "分析时间"),
@@ -45,39 +42,85 @@ COLUMNS: list[tuple[str, str]] = [
     ("notes", "备注"),
     ("updated_at", "回填时间"),
 ]
+FIELD_NAMES = [key for key, _label in COLUMNS]
+HEADERS = [label for _key, label in COLUMNS]
 LABEL_BY_KEY = {key: label for key, label in COLUMNS}
 KEY_BY_LABEL = {label: key for key, label in COLUMNS}
 
-HEADER_FILL = PatternFill("solid", fgColor="1F4E78")
-HEADER_FONT = Font(bold=True, color="FFFFFF")
-HEADER_ALIGN = Alignment(horizontal="center", vertical="center")
-WIDTHS = {
-    "分析时间": 19,
-    "fixture_id": 12,
-    "开赛": 17,
-    "联赛": 12,
-    "主队": 18,
-    "客队": 18,
-    "模式": 8,
-    "方向": 8,
-    "方向名称": 18,
-    "side_line": 10,
-    "让球方": 9,
-    "置信度": 9,
-    "置信度标签": 11,
-    "实验默认": 9,
-    "可下注": 8,
-    "操作": 9,
-    "引擎盘口": 10,
-    "下注水位": 10,
-    "结果": 10,
-    "利润": 9,
-    "CLV盘口": 10,
-    "CLV水位": 10,
-    "CLV有利": 9,
-    "备注": 34,
-    "回填时间": 19,
+PRESERVE_ON_UPDATE = {
+    "result",
+    "profit",
+    "clv_line",
+    "clv_water",
+    "clv_favorable",
+    "updated_at",
 }
+
+
+def _cell(value) -> str:
+    return "" if value is None else str(value)
+
+
+def _row_to_values(row: dict) -> list[str]:
+    return [_cell(row.get(key, "")) for key in FIELD_NAMES]
+
+
+def _rows_to_text(rows: list[dict]) -> str:
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(HEADERS)
+    for row in rows:
+        writer.writerow(_row_to_values(row))
+    return buf.getvalue()
+
+
+def _read_rows(path: Path) -> list[dict]:
+    """Read tracker rows; tolerate BOM, plain UTF-8 and GBK-edited files."""
+    try:
+        text = path.read_text(encoding=CSV_ENCODING)
+    except UnicodeDecodeError:
+        text = path.read_text(encoding="gb18030")
+    reader = csv.reader(io.StringIO(text, newline=""))
+    try:
+        header = next(reader)
+    except StopIteration:
+        return []
+    positions: dict[str, int] = {}
+    for idx, name in enumerate(header):
+        name = name.strip()
+        key = KEY_BY_LABEL.get(name, name)
+        if key in FIELD_NAMES:
+            positions[key] = idx
+    rows: list[dict] = []
+    for values in reader:
+        if not any(value.strip() for value in values):
+            continue
+        rows.append(
+            {
+                key: (values[idx] if idx < len(values) else "")
+                for key, idx in positions.items()
+            }
+        )
+    return rows
+
+
+def _write_rows(path: Path, rows: list[dict]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(path.name + ".tmp")
+    try:
+        tmp.write_text(_rows_to_text(rows), encoding=CSV_ENCODING, newline="")
+        os.replace(tmp, path)
+    finally:
+        if tmp.exists():
+            tmp.unlink(missing_ok=True)
+
+
+def read_tracker_rows(path: str | Path) -> list[dict]:
+    """Return all tracker rows as dicts keyed by COLUMNS field names."""
+    out = Path(path)
+    if not out.exists():
+        return []
+    return _read_rows(out)
 
 
 def result_to_tracker_row(result: AnalysisResult) -> dict:
@@ -116,122 +159,49 @@ def result_to_tracker_row(result: AnalysisResult) -> dict:
     }
 
 
-def build_actionable_workbook(rows: list[dict]) -> bytes:
-    """Build an in-memory workbook containing only the given actionable rows.
+def build_actionable_csv(rows: list[dict]) -> bytes:
+    """Build an in-memory CSV containing only the given actionable rows.
 
     Used for the per-run email attachment so the email never carries the whole
-    cumulative paper_tracking.xlsx history.
+    cumulative paper_tracking.csv history.
     """
-    wb = Workbook()
-    ws = wb.active
-    ws.title = SHEET
-    for col, (_key, label) in enumerate(COLUMNS, 1):
-        cell = ws.cell(1, col, label)
-        cell.fill = HEADER_FILL
-        cell.font = HEADER_FONT
-        cell.alignment = HEADER_ALIGN
-        ws.column_dimensions[get_column_letter(col)].width = WIDTHS.get(label, 14)
-    for row_idx, row in enumerate(rows, 2):
-        for col, (key, _label) in enumerate(COLUMNS, 1):
-            ws.cell(row_idx, col, row.get(key, ""))
-    ws.freeze_panes = "A2"
-    ws.auto_filter.ref = ws.dimensions
-    buf = BytesIO()
-    wb.save(buf)
-    return buf.getvalue()
-
-
-def _ensure_headers(ws) -> dict[str, int]:
-    existing = {
-        str(ws.cell(1, col).value).strip(): col
-        for col in range(1, ws.max_column + 1)
-        if ws.cell(1, col).value is not None
-    }
-    mapping: dict[str, int] = {}
-    has_headers = any(
-        ws.cell(1, col).value is not None for col in range(1, ws.max_column + 1)
-    )
-    next_col = ws.max_column + 1 if has_headers else 1
-    for key, label in COLUMNS:
-        if label in existing:
-            mapping[key] = existing[label]
-        else:
-            col = next_col
-            next_col += 1
-            cell = ws.cell(1, col, label)
-            cell.fill = HEADER_FILL
-            cell.font = HEADER_FONT
-            cell.alignment = HEADER_ALIGN
-            mapping[key] = col
-    for key, label in COLUMNS:
-        col = mapping[key]
-        if ws.column_dimensions[get_column_letter(col)].width is None:
-            ws.column_dimensions[get_column_letter(col)].width = WIDTHS.get(
-                label, 14
-            )
-    ws.freeze_panes = "A2"
-    ws.auto_filter.ref = ws.dimensions
-    return mapping
-
-
-def _open_tracker(path: Path):
-    if path.exists():
-        wb = load_workbook(path)
-        if SHEET in wb.sheetnames:
-            ws = wb[SHEET]
-        else:
-            ws = wb.create_sheet(SHEET, 0)
-    else:
-        wb = Workbook()
-        ws = wb.active
-        ws.title = SHEET
-    if LEGACY_INFO_SHEET in wb.sheetnames:
-        del wb[LEGACY_INFO_SHEET]
-    mapping = _ensure_headers(ws)
-    return wb, ws, mapping
+    return _rows_to_text(rows).encode(CSV_ENCODING)
 
 
 def append_rows(path: str | Path, rows: list[dict]) -> tuple[int, int]:
     """Append actionable rows; update the same (analysis_at, fixture_id) in place."""
     out = Path(path)
-    out.parent.mkdir(parents=True, exist_ok=True)
-    wb, ws, mapping = _open_tracker(out)
+    existing_rows = _read_rows(out) if out.exists() else []
 
-    existing: dict[tuple[str, int], int] = {}
-    for row_idx in range(2, ws.max_row + 1):
-        at = ws.cell(row_idx, mapping["analysis_at"]).value
-        fid = ws.cell(row_idx, mapping["fixture_id"]).value
-        if at and fid is not None:
-            existing[(str(at), int(fid))] = row_idx
+    index: dict[tuple[str, int], int] = {}
+    for row_idx, row in enumerate(existing_rows):
+        at = str(row.get("analysis_at", "")).strip()
+        fid = str(row.get("fixture_id", "")).strip()
+        if at and fid:
+            try:
+                index[(at, int(fid))] = row_idx
+            except ValueError:
+                continue
 
     added = 0
     updated = 0
-    preserve = {"result", "profit", "clv_line", "clv_water", "clv_favorable", "updated_at"}
     for row in rows:
         key = (str(row["analysis_at"]), int(row["fixture_id"]))
-        if key in existing:
-            row_idx = existing[key]
-            for field, label in COLUMNS:
-                col = mapping[field]
-                if field in preserve and ws.cell(row_idx, col).value not in (None, ""):
+        if key in index:
+            target = existing_rows[index[key]]
+            for field in FIELD_NAMES:
+                if field in PRESERVE_ON_UPDATE and _cell(target.get(field, "")).strip():
                     continue
-                ws.cell(row_idx, col, row.get(field, ""))
+                target[field] = _cell(row.get(field, ""))
             updated += 1
         else:
-            row_idx = ws.max_row + 1
-            for field, label in COLUMNS:
-                ws.cell(row_idx, mapping[field], row.get(field, ""))
-            existing[key] = row_idx
+            existing_rows.append(
+                {field: _cell(row.get(field, "")) for field in FIELD_NAMES}
+            )
+            index[key] = len(existing_rows) - 1
             added += 1
 
-    # Basic number formats
-    for row_idx in range(2, ws.max_row + 1):
-        for field in ("side_line", "engine_line", "water", "clv_line", "clv_water"):
-            ws.cell(row_idx, mapping[field]).number_format = "+0.00;-0.00;0.00"
-        ws.cell(row_idx, mapping["profit"]).number_format = "+0.00;-0.00;0.00"
-        ws.cell(row_idx, mapping["confidence"]).number_format = "0"
-
-    wb.save(out)
+    _write_rows(out, existing_rows)
     return added, updated
 
 
@@ -259,32 +229,34 @@ def update_tracking_results(conn, path: str | Path) -> tuple[int, int, int]:
     out = Path(path)
     if not out.exists():
         raise FileNotFoundError(f"tracker file not found: {out}")
-    wb = load_workbook(out)
-    if SHEET not in wb.sheetnames:
-        raise ValueError(f"sheet {SHEET!r} not found in {out}")
-    ws = wb[SHEET]
-    mapping = _ensure_headers(ws)
+    rows = _read_rows(out)
 
     updated = 0
     skipped = 0
     errors = 0
-    for row_idx in range(2, ws.max_row + 1):
-        if ws.cell(row_idx, mapping["result"]).value not in (None, ""):
+    for row in rows:
+        if _cell(row.get("result", "")).strip():
             continue
         try:
-            fixture_id = int(ws.cell(row_idx, mapping["fixture_id"]).value)
-            direction = str(ws.cell(row_idx, mapping["direction"]).value or "")
-            bet_line = ws.cell(row_idx, mapping["side_line"]).value
-            water = ws.cell(row_idx, mapping["water"]).value
-            if direction not in ("home", "away") or bet_line is None or water is None:
+            fixture_id_raw = _cell(row.get("fixture_id", "")).strip()
+            direction = _cell(row.get("direction", ""))
+            bet_line_raw = _cell(row.get("side_line", "")).strip()
+            water_raw = _cell(row.get("water", "")).strip()
+            if (
+                direction not in ("home", "away")
+                or not fixture_id_raw
+                or not bet_line_raw
+                or not water_raw
+            ):
                 skipped += 1
                 continue
+            fixture_id = int(fixture_id_raw)
+            bet_line = float(bet_line_raw)
+            water = float(water_raw)
             match = fetch_match(conn, fixture_id)
             if not match or match.home_score is None or match.away_score is None:
                 skipped += 1
                 continue
-            bet_line = float(bet_line)
-            water = float(water)
             settlement = settle_asian(
                 bet_line,
                 water,
@@ -305,22 +277,17 @@ def update_tracking_results(conn, path: str | Path) -> tuple[int, int, int]:
                     (clv_line is not None and clv_line > 1e-9)
                     or (clv_water is not None and clv_water > 1e-9)
                 )
-            ws.cell(row_idx, mapping["result"], settlement.outcome)
-            ws.cell(row_idx, mapping["profit"], settlement.profit)
-            ws.cell(row_idx, mapping["clv_line"], clv_line if clv_line is not None else "")
-            ws.cell(row_idx, mapping["clv_water"], clv_water if clv_water is not None else "")
-            ws.cell(
-                row_idx,
-                mapping["clv_favorable"],
-                "" if favorable is None else ("是" if favorable else "否"),
+            row["result"] = settlement.outcome
+            row["profit"] = settlement.profit
+            row["clv_line"] = clv_line if clv_line is not None else ""
+            row["clv_water"] = clv_water if clv_water is not None else ""
+            row["clv_favorable"] = (
+                "" if favorable is None else ("是" if favorable else "否")
             )
-            ws.cell(
-                row_idx,
-                mapping["updated_at"],
-                datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            )
+            row["updated_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             updated += 1
         except Exception:
             errors += 1
-    wb.save(out)
+
+    _write_rows(out, rows)
     return updated, skipped, errors

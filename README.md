@@ -38,7 +38,7 @@ Python 3.10+。
 python -m rule_engine run --ids 3010473 --decision-minutes 60 --out-dir out/t60
 python -m rule_engine run --ids 3010473,3000518 --decision-minutes 60
 
-# 一键：导入 + 分析全部 + 把 actionable 写入 Excel（默认 tracking/paper_tracking.xlsx）
+# 一键：导入 + 分析全部 + 把 actionable 写入 CSV（默认 tracking/paper_tracking.csv）
 python -m rule_engine run --ids 3010473 --experimental-default
 python -m rule_engine run --leagues 9 --dates 2026-11-07 --experimental-default
 
@@ -46,11 +46,11 @@ python -m rule_engine run --leagues 9 --dates 2026-11-07 --experimental-default
 python -m rule_engine run --within-minutes 60 --experimental-default
 python -m rule_engine run --within-minutes 60 --experimental-default --skip-import --no-track
 
-# 自定义 Excel 路径 / 关闭 Excel 跟踪
-python -m rule_engine run --ids 3010473 --experimental-default --excel out/my_tracking.xlsx
+# 自定义 CSV 路径 / 关闭 CSV 跟踪
+python -m rule_engine run --ids 3010473 --experimental-default --excel out/my_tracking.csv
 python -m rule_engine run --ids 3010473 --experimental-default --no-track
 
-# 只分析、不写 Excel
+# 只分析、不写 CSV
 python -m rule_engine analyze --ids 3010473,3000518 --experimental-default --out-dir out/exp
 
 # 也可以分开传
@@ -118,8 +118,8 @@ python -m rule_engine backtest --from 2026-10-01 --to 2026-11-06 \
 | `--decision-minutes 60` | 每场各自取开赛前 60 分钟分析 |
 | `--experimental-default` | 让球方 + conf≥50 + T-60 |
 | `--only-giving` / `--min-confidence N` | 单独控制方向/置信度过滤 |
-| `--excel` | 纸面跟踪 Excel 路径，默认 `tracking/paper_tracking.xlsx` |
-| `--no-track` | 不写 Excel，只分析 |
+| `--excel` | 纸面跟踪 CSV 路径，默认 `tracking/paper_tracking.csv` |
+| `--no-track` | 不写 CSV，只分析 |
 | `--no-report` | 不写 `out/` 下的 HTML/JSON |
 | `--ci` | CI 模式：`--no-report` + `--no-save`，不生成 `out/`、`data/` |
 | `--within-minutes N` | 扫描所有联赛未来 N 分钟内开赛的比赛 |
@@ -132,7 +132,7 @@ python -m rule_engine backtest --from 2026-10-01 --to 2026-11-06 \
 > 避免漏掉 00:xx / 01:00 的比赛。
 > `--skip-import` 才只扫描数据库已有比赛。`--max-fixtures` 限制发现/分析的场次。
 > `--leagues` 同时作用于赛程发现和数据库刷新；`--all-leagues` 关闭白名单。
-> 亚盘核心公司 < 阈值或欧赔公司 < 阈值时标记 `[skip]`，不生成 HTML/JSON，也不写入 Excel。
+> 亚盘核心公司 < 阈值或欧赔公司 < 阈值时标记 `[skip]`，不生成 HTML/JSON，也不写入 CSV。
 
 > `--as-of` 是**所有场次共用的固定时间戳**，适合复现某一场或某一天同一时刻的决策。
 > `--decision-minutes` 是**逐场计算** `开赛时间 - N 分钟`，适合批量生成真正的 T-60 赛前分析；
@@ -347,17 +347,17 @@ JSON/HTML 新增字段：
 
 > 当前默认行为没有改变：不加参数时仍是 conf≥45、主客都做。实验 gate 需要显式 `--experimental-default` 或两个过滤参数。
 
-## 纸面跟踪（Excel）
+## 纸面跟踪（CSV）
 
-`run` 现在会**自动**把 `actionable=是` 的场次写入 Excel（默认 `tracking/paper_tracking.xlsx`）；`track` 是只做跟踪、不写 HTML 的轻量命令。`track-update` 再回填结果和 CLV。
+`run` 现在会**自动**把 `actionable=是` 的场次写入 CSV（默认 `tracking/paper_tracking.csv`）；`track` 是只做跟踪、不写 HTML 的轻量命令。`track-update` 再回填结果和 CLV。
 
 ```bash
-# 分析并写入 Excel（默认：T-60、只做让球方、conf>=50）
-python -m rule_engine track --ids 3010473 --excel tracking/paper_tracking.xlsx
-python -m rule_engine track --dates 2026-11-07 --leagues 25 --excel tracking/paper_tracking.xlsx
+# 分析并写入 CSV（默认：T-60、只做让球方、conf>=50）
+python -m rule_engine track --ids 3010473 --excel tracking/paper_tracking.csv
+python -m rule_engine track --dates 2026-11-07 --leagues 25 --excel tracking/paper_tracking.csv
 
 # 回填 result / profit / CLV（比赛结束后运行）
-python -m rule_engine track-update --excel tracking/paper_tracking.xlsx
+python -m rule_engine track-update --excel tracking/paper_tracking.csv
 ```
 
 行为：
@@ -366,8 +366,8 @@ python -m rule_engine track-update --excel tracking/paper_tracking.xlsx
 - 默认只做让球方 + conf≥50；`--all-sides` / `--min-confidence` 可覆盖。
 - 默认 T-60；`--as-of` 可指定固定分析时点。
 - 以 `(analysis_at, fixture_id)` 去重：同一快照重复运行只更新，不新增行；已回填的 result/CLV 不会被覆盖。
-- Excel 包含：分析时间、比赛、方向、side_line、让球方、置信度、实验默认、可下注、操作、引擎盘口、下注水位、result、profit、CLV盘口/水位/有利、备注、回填时间。
-- 依赖 `openpyxl`（已加入 `requirements.txt`）。
+- CSV 包含：分析时间、比赛、方向、side_line、让球方、置信度、实验默认、可下注、操作、引擎盘口、下注水位、result、profit、CLV盘口/水位/有利、备注、回填时间。
+- CSV 使用 UTF-8 with BOM（`utf-8-sig`），Excel/WPS 可直接打开且中文不乱码；不再依赖 `openpyxl`。
 
 > `track` 只分析数据库里已有的比赛；数据不新时先运行 `python -m rule_engine run ...` 或 `import`。
 
@@ -419,12 +419,12 @@ python -m rule_engine import --dates 2026-11-08 --all-leagues
 4. 只导入这些比赛的赔率，按 **T-60 + 只做让球方 + conf≥50** 分析；
 5. 赔率不足的场次跳过；
 6. 有 `actionable=是` 时：
-   - 写 `tracking/paper_tracking.xlsx`
+   - 写 `tracking/paper_tracking.csv`
    - 追加 `tracking/actionable_YYYY-MM-DD.json`
-   - 通过 SMTP 发邮件：正文只列**本轮新增** actionable；附件是只含本轮新增场次的小 Excel，不再附完整的 `paper_tracking.xlsx`
+   - 通过 SMTP 发邮件：正文只列**本轮新增** actionable；附件是只含本轮新增场次的小 CSV，不再附完整的 `paper_tracking.csv`
 7. 更新 `data/scheduler_state.json` 去重；
 8. **赛程刷新成功后**自动结算已结束场次（只在 11:00 / 16:00 之后的第一次运行触发，不是每 30 分钟都跑）：
-   - 从 `paper_tracking.xlsx` 中挑出开赛超过 3 小时、仍未回填 `result` 的场次；
+   - 从 `paper_tracking.csv` 中挑出开赛超过 3 小时、仍未回填 `result` 的场次；
    - 重新导入这些场次的赔率/比分，回填 `result`、`profit`、CLV 盘口/水位；
    - 把回填结果同步到对应的 `tracking/actionable_YYYY-MM-DD.json`；
 9. 把 `data/` 与 `tracking/` 的结果提交回仓库。
@@ -433,7 +433,7 @@ python -m rule_engine import --dates 2026-11-08 --all-leagues
 >
 > workflow 需要 `permissions: contents: write`，每次运行把
 > `data/schedule_cache.json`、`data/scheduler_state.json`、
-> `tracking/paper_tracking.xlsx`、`tracking/actionable_*.json` 提交回仓库；
+> `tracking/paper_tracking.csv`、`tracking/actionable_*.json` 提交回仓库；
 > `concurrency` 保证同一时间只跑一个调度器。
 
 需要配置的 GitHub Secrets：
@@ -509,8 +509,8 @@ python -m rule_engine run --experimental-default --within-minutes 60
 ```
 
 `--no-email` 可关闭邮件。每次运行的 MySQL 是临时容器，但
-`tracking/paper_tracking.xlsx` 和 `tracking/actionable_*.json` 会提交回仓库，
-因此历史和结算结果可以跨运行累计。邮件只包含本轮新增的 actionable（正文 + 本轮小 Excel），artifact 作为额外备份。
+`tracking/paper_tracking.csv` 和 `tracking/actionable_*.json` 会提交回仓库，
+因此历史和结算结果可以跨运行累计。邮件只包含本轮新增的 actionable（正文 + 本轮小 CSV），artifact 作为额外备份。
 
 ## 项目结构
 
@@ -527,10 +527,10 @@ football-rule-engine/
     settlement.py # 亚盘结算（半赢/半输/走盘）
     backtest.py   # Phase 2 回测 + 分桶统计
     walkforward.py # Phase 3 月度滚动样本外验证
-    tracker.py    # 纸面跟踪 Excel（actionable 场次、result、CLV）
+    tracker.py    # 纸面跟踪 CSV（actionable 场次、result、CLV）
     scheduler.py  # 赛程缓存 + 30 分钟轮询 + 11/16 点结算回填 + 邮件 + 提交结果
     settle.py     # 回填已结束场次的 result/profit/CLV，并同步 actionable JSON
-    notify.py     # SMTP 邮件通知（仅本轮新增 actionable + 小 Excel）
+    notify.py     # SMTP 邮件通知（仅本轮新增 actionable + 小 CSV）
     init_db.py    # 用 sql/schema.sql 初始化 MySQL
     report.py     # 仅结论段 HTML + JSON
     cli.py        # analyze / scan / backtest / import / run / track
@@ -562,7 +562,7 @@ football-rule-engine/
     test_init_db.py
     test_ingest_imports.py
   data/           # scheduler_state.json / schedule_cache.json（提交回仓库）
-  tracking/       # paper_tracking.xlsx / actionable_YYYY-MM-DD.json
+  tracking/       # paper_tracking.csv / actionable_YYYY-MM-DD.json
   out/            # 本地分析 HTML/JSON（Actions 不使用）
 ```
 

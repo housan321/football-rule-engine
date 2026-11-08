@@ -1,19 +1,21 @@
 from __future__ import annotations
 
+import csv
+import io
 import tempfile
 import unittest
 from datetime import datetime
-from io import BytesIO
 from pathlib import Path
-
-from openpyxl import load_workbook
+from types import SimpleNamespace
+from unittest.mock import patch
 
 from rule_engine.engine import AnalysisResult
 from rule_engine.models import Match
 from rule_engine.tracker import (
     append_rows,
-    build_actionable_workbook,
+    build_actionable_csv,
     result_to_tracker_row,
+    update_tracking_results,
 )
 
 
@@ -51,6 +53,11 @@ def make_result(fixture_id: int = 1, confidence: int = 50) -> AnalysisResult:
     )
 
 
+def read_csv(path: Path) -> list[dict]:
+    with path.open(encoding="utf-8-sig", newline="") as fh:
+        return list(csv.DictReader(fh))
+
+
 class TrackerTests(unittest.TestCase):
     def test_row_fields(self):
         row = result_to_tracker_row(make_result())
@@ -63,39 +70,71 @@ class TrackerTests(unittest.TestCase):
 
     def test_append_and_update(self):
         with tempfile.TemporaryDirectory() as tmp:
-            path = Path(tmp) / "tracking.xlsx"
+            path = Path(tmp) / "tracking.csv"
             row = result_to_tracker_row(make_result())
             added, updated = append_rows(path, [row])
             self.assertEqual((added, updated), (1, 0))
 
-            wb = load_workbook(path)
-            self.assertEqual(wb.sheetnames, ["paper_tracking"])
-            ws = wb["paper_tracking"]
-            self.assertEqual(ws.max_row, 2)
+            rows = read_csv(path)
+            self.assertEqual(len(rows), 1)
+            self.assertEqual(rows[0]["fixture_id"], "1")
+            self.assertEqual(rows[0]["置信度"], "50")
 
             row2 = result_to_tracker_row(make_result(confidence=55))
             added, updated = append_rows(path, [row2])
             self.assertEqual((added, updated), (0, 1))
-            wb = load_workbook(path)
-            ws = wb["paper_tracking"]
-            self.assertEqual(ws.max_row, 2)
-            header = {cell.value: cell.column for cell in ws[1]}
-            self.assertEqual(ws.cell(2, header["置信度"]).value, 55)
+            rows = read_csv(path)
+            self.assertEqual(len(rows), 1)
+            self.assertEqual(rows[0]["置信度"], "55")
 
             row3 = result_to_tracker_row(make_result(fixture_id=2))
             added, updated = append_rows(path, [row3])
             self.assertEqual((added, updated), (1, 0))
-            wb = load_workbook(path)
-            self.assertEqual(wb["paper_tracking"].max_row, 3)
+            self.assertEqual(len(read_csv(path)), 2)
 
-    def test_build_actionable_workbook_only_contains_given_rows(self):
+    def test_update_preserves_settled_fields(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "tracking.csv"
+            row = result_to_tracker_row(make_result())
+            append_rows(path, [row])
+            rows = read_csv(path)
+            rows[0]["结果"] = "win"
+            rows[0]["利润"] = "0.9"
+            with path.open("w", encoding="utf-8-sig", newline="") as fh:
+                writer = csv.DictWriter(fh, fieldnames=list(rows[0]))
+                writer.writeheader()
+                writer.writerows(rows)
+
+            append_rows(path, [result_to_tracker_row(make_result(confidence=55))])
+            rows = read_csv(path)
+            self.assertEqual(rows[0]["结果"], "win")
+            self.assertEqual(rows[0]["利润"], "0.9")
+            self.assertEqual(rows[0]["置信度"], "55")
+
+    def test_update_tracking_results_fills_csv(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "tracking.csv"
+            append_rows(path, [result_to_tracker_row(make_result())])
+            match = SimpleNamespace(home_score=2, away_score=0)
+            with patch(
+                "rule_engine.tracker.fetch_match", return_value=match
+            ), patch(
+                "rule_engine.tracker._closing_quote", return_value=(None, None)
+            ):
+                updated, skipped, errors = update_tracking_results(object(), path)
+            self.assertEqual((updated, skipped, errors), (1, 0, 0))
+            rows = read_csv(path)
+            self.assertEqual(rows[0]["结果"], "win")
+            self.assertEqual(float(rows[0]["利润"]), 0.9)
+
+    def test_build_actionable_csv_only_contains_given_rows(self):
         row = result_to_tracker_row(make_result(fixture_id=7))
-        wb = load_workbook(BytesIO(build_actionable_workbook([row])))
-        ws = wb["paper_tracking"]
-        header = {cell.value: cell.column for cell in ws[1]}
-        self.assertEqual(ws.max_row, 2)
-        self.assertEqual(ws.cell(2, header["fixture_id"]).value, 7)
-        self.assertEqual(ws.cell(2, header["可下注"]).value, "是")
+        payload = build_actionable_csv([row])
+        self.assertTrue(payload.startswith(b"\xef\xbb\xbf"))
+        rows = list(csv.DictReader(io.StringIO(payload.decode("utf-8-sig"))))
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["fixture_id"], "7")
+        self.assertEqual(rows[0]["可下注"], "是")
 
 
 if __name__ == "__main__":

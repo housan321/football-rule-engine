@@ -4,26 +4,26 @@ import json
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from openpyxl import load_workbook
-
 from .config import load_config
 from .db import connect
 from .ingest.all import main as ingest_main
 from .scheduler import TRACKING_DIR, now_local
-from .tracker import COLUMNS, SHEET, update_tracking_results
+from .tracker import read_tracker_rows, update_tracking_results
 
-EXCEL_PATH = TRACKING_DIR / "paper_tracking.xlsx"
+TRACKER_PATH = TRACKING_DIR / "paper_tracking.csv"
 MIN_AGE_HOURS = 3
 MAX_AGE_DAYS = 3
 
 
-def _headers(ws) -> dict[str, int]:
-    labels = {
-        str(cell.value).strip(): cell.column
-        for cell in ws[1]
-        if cell.value is not None
-    }
-    return {key: labels[label] for key, label in COLUMNS if label in labels}
+def _number(value):
+    """Return a float for numeric CSV cells, otherwise the raw string."""
+    text = str(value or "").strip()
+    if not text:
+        return ""
+    try:
+        return float(text)
+    except ValueError:
+        return text
 
 
 def pending_fixture_ids(
@@ -34,63 +34,47 @@ def pending_fixture_ids(
 ) -> list[int]:
     if not path.exists():
         return []
-    wb = load_workbook(path, read_only=True)
-    try:
-        ws = wb[SHEET]
-        headers = _headers(ws)
-        need = {"kickoff", "fixture_id", "result"}
-        if not need.issubset(headers):
-            return []
-        ids: list[int] = []
-        for row in ws.iter_rows(min_row=2, values_only=True):
-            result = row[headers["result"] - 1]
-            if result not in (None, ""):
-                continue
-            try:
-                kickoff = datetime.strptime(
-                    str(row[headers["kickoff"] - 1]), "%Y-%m-%d %H:%M"
-                )
-                fixture_id = int(row[headers["fixture_id"] - 1])
-            except (TypeError, ValueError):
-                continue
-            if kickoff > now - timedelta(hours=MIN_AGE_HOURS):
-                continue
-            if kickoff < now - timedelta(days=max_age_days):
-                continue
-            if fixture_id not in ids:
-                ids.append(fixture_id)
-            if len(ids) >= max_fixtures:
-                break
-        return ids
-    finally:
-        wb.close()
+    ids: list[int] = []
+    for row in read_tracker_rows(path):
+        if str(row.get("result", "")).strip():
+            continue
+        try:
+            kickoff = datetime.strptime(
+                str(row.get("kickoff", "")).strip(), "%Y-%m-%d %H:%M"
+            )
+            fixture_id = int(str(row.get("fixture_id", "")).strip())
+        except (TypeError, ValueError):
+            continue
+        if kickoff > now - timedelta(hours=MIN_AGE_HOURS):
+            continue
+        if kickoff < now - timedelta(days=max_age_days):
+            continue
+        if fixture_id not in ids:
+            ids.append(fixture_id)
+        if len(ids) >= max_fixtures:
+            break
+    return ids
 
 
 def sync_actionable_json(now: datetime) -> int:
-    """Copy result/profit/CLV from Excel into actionable_*.json."""
-    if not EXCEL_PATH.exists():
+    """Copy result/profit/CLV from the CSV tracker into actionable_*.json."""
+    if not TRACKER_PATH.exists():
         return 0
-    wb = load_workbook(EXCEL_PATH, read_only=True)
-    try:
-        ws = wb[SHEET]
-        headers = _headers(ws)
-        sheet_values = {}
-        for row in ws.iter_rows(min_row=2, values_only=True):
-            try:
-                fixture_id = int(row[headers["fixture_id"] - 1])
-                analysis_at = str(row[headers["analysis_at"] - 1])
-            except (KeyError, TypeError, ValueError):
-                continue
-            sheet_values[(fixture_id, analysis_at)] = {
-                "result": row[headers["result"] - 1],
-                "profit": row[headers["profit"] - 1],
-                "clv_line": row[headers["clv_line"] - 1],
-                "clv_water": row[headers["clv_water"] - 1],
-                "clv_favorable": row[headers["clv_favorable"] - 1],
-                "updated_at": row[headers["updated_at"] - 1],
-            }
-    finally:
-        wb.close()
+    tracker_values = {}
+    for row in read_tracker_rows(TRACKER_PATH):
+        try:
+            fixture_id = int(str(row.get("fixture_id", "")).strip())
+            analysis_at = str(row.get("analysis_at", "")).strip()
+        except (TypeError, ValueError):
+            continue
+        tracker_values[(fixture_id, analysis_at)] = {
+            "result": row.get("result", ""),
+            "profit": _number(row.get("profit")),
+            "clv_line": _number(row.get("clv_line")),
+            "clv_water": _number(row.get("clv_water")),
+            "clv_favorable": row.get("clv_favorable", ""),
+            "updated_at": row.get("updated_at", ""),
+        }
 
     changed = 0
     for path in sorted(TRACKING_DIR.glob("actionable_*.json")):
@@ -101,7 +85,7 @@ def sync_actionable_json(now: datetime) -> int:
         dirty = False
         for entry in entries:
             key = (entry.get("fixture_id"), entry.get("analysis_at"))
-            values = sheet_values.get(key)
+            values = tracker_values.get(key)
             if not values or entry.get("result") not in (None, ""):
                 continue
             entry.update(values)
@@ -118,11 +102,11 @@ def sync_actionable_json(now: datetime) -> int:
 def run(now: datetime | None = None) -> int:
     now = now or now_local()
     print(f"=== settle {now:%Y-%m-%d %H:%M:%S} Asia/Shanghai ===")
-    if not EXCEL_PATH.exists():
-        print(f"no tracker file: {EXCEL_PATH}")
+    if not TRACKER_PATH.exists():
+        print(f"no tracker file: {TRACKER_PATH}")
         return 0
 
-    ids = pending_fixture_ids(EXCEL_PATH, now)
+    ids = pending_fixture_ids(TRACKER_PATH, now)
     if ids:
         print(f"pending settled fixtures: {len(ids)}")
         rc = ingest_main(
@@ -136,12 +120,12 @@ def run(now: datetime | None = None) -> int:
     cfg = load_config()
     conn = connect(cfg)
     try:
-        updated, skipped, errors = update_tracking_results(conn, EXCEL_PATH)
+        updated, skipped, errors = update_tracking_results(conn, TRACKER_PATH)
     finally:
         conn.close()
     json_files = sync_actionable_json(now)
     print(
-        f"settle: excel_updated={updated} skipped={skipped} errors={errors} "
+        f"settle: tracker_updated={updated} skipped={skipped} errors={errors} "
         f"json_files_updated={json_files}"
     )
     return 1 if errors else 0

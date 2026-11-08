@@ -71,7 +71,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: paper-tracking-${{ github.run_id }}
-          path: tracking/paper_tracking.xlsx
+          path: tracking/paper_tracking.csv
           if-no-files-found: ignore
 
       - name: Commit schedule cache and results
@@ -79,7 +79,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          for f in data/schedule_cache.json data/scheduler_state.json tracking/paper_tracking.xlsx; do
+          for f in data/schedule_cache.json data/scheduler_state.json tracking/paper_tracking.csv; do
             [ -e "$f" ] && git add -f "$f"
           done
           for f in tracking/actionable_*.json; do
