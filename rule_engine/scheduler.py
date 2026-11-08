@@ -323,6 +323,10 @@ def run_once(now: datetime) -> int:
                     f"actionable_{now.strftime('%Y-%m-%d_%H%M')}.xlsx",
                     build_actionable_workbook(rows),
                 )
+                print(
+                    f"  [email] smtp {email_cfg.host}:{email_cfg.port} "
+                    f"ssl={email_cfg.use_ssl} tls={email_cfg.use_tls}"
+                )
                 sent = send_actionable_email(
                     results, email_cfg, attachment=attachment
                 )

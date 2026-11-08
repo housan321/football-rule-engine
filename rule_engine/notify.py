@@ -23,7 +23,9 @@ class EmailConfig:
 
 def _env_bool(name: str, default: bool = False) -> bool:
     value = os.environ.get(name)
-    if value is None:
+    # GitHub Actions turns undefined secrets into empty strings, not unset
+    # variables. Treat both as "not configured" so SMTP_TLS keeps its default.
+    if value is None or not value.strip():
         return default
     return value.strip().lower() in ("1", "true", "yes", "on")
 

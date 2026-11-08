@@ -71,6 +71,23 @@ class NotifyTests(unittest.TestCase):
         with patch.dict(os.environ, {}, clear=True):
             self.assertIsNone(email_config_from_env())
 
+    def test_empty_ssl_tls_secrets_use_defaults(self):
+        env = {
+            "SMTP_HOST": "smtp.example.com",
+            "SMTP_PORT": "587",
+            "SMTP_USER": "user@example.com",
+            "SMTP_PASSWORD": "secret",
+            "SMTP_SSL": "",
+            "SMTP_TLS": "",
+            "MAIL_FROM": "user@example.com",
+            "MAIL_TO": "a@example.com",
+        }
+        with patch.dict(os.environ, env, clear=True):
+            cfg = email_config_from_env()
+        self.assertIsNotNone(cfg)
+        self.assertFalse(cfg.use_ssl)
+        self.assertTrue(cfg.use_tls)
+
     def test_no_actionable_sends_nothing(self):
         cfg = EmailConfig(
             host="127.0.0.1", port=25, mail_from="a@example.com",
