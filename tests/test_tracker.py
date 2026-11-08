@@ -64,8 +64,7 @@ class TrackerTests(unittest.TestCase):
             self.assertEqual((added, updated), (1, 0))
 
             wb = load_workbook(path)
-            self.assertIn("paper_tracking", wb.sheetnames)
-            self.assertIn("说明", wb.sheetnames)
+            self.assertEqual(wb.sheetnames, ["paper_tracking"])
             ws = wb["paper_tracking"]
             self.assertEqual(ws.max_row, 2)
 

@@ -406,12 +406,31 @@ python -m rule_engine import --dates 2026-11-08 --all-leagues
 - 定时由 **cron-job.org**（console.cron-job.org）通过 GitHub `workflow_dispatch` API 触发，每 30 分钟一次
 - job 内启动临时 **MySQL 8 service container**，不需云数据库
 - `python -m rule_engine.init_db` 初始化 `sql/schema.sql`
-- 运行：
+- 运行调度器：
   ```bash
-  python -m rule_engine run --ci --experimental-default --within-minutes 60
+  python -m rule_engine.scheduler
   ```
-- 有 `actionable=是` 时：写 `tracking/paper_tracking.xlsx`，并通过 SMTP 发邮件（附 Excel）
-- 上传 Excel artifact
+
+调度器逻辑（参考 `euro_asian_task-main`）：
+
+1. 读 `data/schedule_cache.json`；
+2. 每天 **11:00 / 18:00（北京时间）之后第一次运行**自动爬 D-1 / D / D+1 赛程页，刷新缓存；
+3. 筛选未来 **60 分钟**内开赛、且今天尚未分析过的比赛；
+4. 只导入这些比赛的赔率，按 **T-60 + 只做让球方 + conf≥50** 分析；
+5. 赔率不足的场次跳过；
+6. 有 `actionable=是` 时：
+   - 写 `tracking/paper_tracking.xlsx`
+   - 追加 `tracking/actionable_YYYY-MM-DD.json`
+   - 通过 SMTP 发邮件，附 Excel
+7. 更新 `data/scheduler_state.json` 去重；
+8. 把 `data/` 与 `tracking/` 的结果提交回仓库。
+
+> `data/` 只存调度缓存/状态两个小 JSON，不再生成比赛 HTML/JSON；`out/` 在 Actions 里不使用。
+>
+> workflow 需要 `permissions: contents: write`，每次运行把
+> `data/schedule_cache.json`、`data/scheduler_state.json`、
+> `tracking/paper_tracking.xlsx`、`tracking/actionable_*.json` 提交回仓库；
+> `concurrency` 保证同一时间只跑一个调度器。
 
 需要配置的 GitHub Secrets：
 
@@ -498,6 +517,7 @@ football-rule-engine/
     backtest.py   # Phase 2 回测 + 分桶统计
     walkforward.py # Phase 3 月度滚动样本外验证
     tracker.py    # 纸面跟踪 Excel（actionable 场次、result、CLV）
+    scheduler.py  # 赛程缓存 + 30 分钟轮询 + 邮件 + 提交结果
     notify.py     # SMTP 邮件通知（actionable + Excel 附件）
     init_db.py    # 用 sql/schema.sql 初始化 MySQL
     report.py     # 仅结论段 HTML + JSON
@@ -514,7 +534,7 @@ football-rule-engine/
     schema.sql    # MySQL 表结构（Actions service container / 本地初始化）
   .github/
     workflows/
-      scan.yml    # 每 30 分钟扫描 + 邮件
+      scan.yml    # 每 30 分钟调度 + 邮件 + 提交结果
   tests/
     test_features.py
     test_rules.py
@@ -524,10 +544,13 @@ football-rule-engine/
     test_backtest.py
     test_walkforward.py
     test_tracker.py
+    test_scheduler.py
     test_notify.py
     test_init_db.py
     test_ingest_imports.py
-  out/            # 输出
+  data/           # scheduler_state.json / schedule_cache.json（提交回仓库）
+  tracking/       # paper_tracking.xlsx / actionable_YYYY-MM-DD.json
+  out/            # 本地分析 HTML/JSON（Actions 不使用）
 ```
 
 ## 测试

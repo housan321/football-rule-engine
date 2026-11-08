@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: odds-scan
@@ -16,6 +16,8 @@ jobs:
   scan:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      TZ: Asia/Shanghai
 
     services:
       mysql:
@@ -52,7 +54,7 @@ jobs:
       - name: Init schema
         run: python -m rule_engine.init_db
 
-      - name: Scan, track, and email
+      - name: Run scheduler
         env:
           SMTP_HOST: ${{ secrets.SMTP_HOST }}
           SMTP_PORT: ${{ secrets.SMTP_PORT }}
@@ -62,11 +64,7 @@ jobs:
           SMTP_TLS: ${{ secrets.SMTP_TLS }}
           MAIL_FROM: ${{ secrets.MAIL_FROM }}
           MAIL_TO: ${{ secrets.MAIL_TO }}
-        run: |
-          python -m rule_engine run \
-            --ci \
-            --experimental-default \
-            --within-minutes 60
+        run: python -m rule_engine.scheduler
 
       - name: Upload tracker artifact
         if: always()
@@ -75,3 +73,22 @@ jobs:
           name: paper-tracking-${{ github.run_id }}
           path: tracking/paper_tracking.xlsx
           if-no-files-found: ignore
+
+      - name: Commit schedule cache and results
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          for f in data/schedule_cache.json data/scheduler_state.json tracking/paper_tracking.xlsx; do
+            [ -e "$f" ] && git add -f "$f"
+          done
+          for f in tracking/actionable_*.json; do
+            [ -e "$f" ] && git add -f "$f"
+          done
+          if git diff --cached --quiet; then
+            echo "no changes to commit"
+          else
+            git commit -m "chore: scheduler $(date -u +'%Y-%m-%d %H:%M') UTC"
+            git pull --rebase
+            git push
+          fi

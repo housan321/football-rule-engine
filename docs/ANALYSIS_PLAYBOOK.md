@@ -561,13 +561,21 @@ python -m rule_engine track-update --excel tracking/paper_tracking.xlsx
 - `python -m rule_engine.init_db` 初始化 `sql/schema.sql`
 - 执行：
   ```bash
-  python -m rule_engine run --ci --experimental-default --within-minutes 60
+  python -m rule_engine.scheduler
   ```
-  `--ci` = 不写 `out/` HTML/JSON + 不保存 `data/` JS，只保留 `tracking/paper_tracking.xlsx` 和邮件。
-- 有 `actionable=是` 时：
-  - 写入 `tracking/paper_tracking.xlsx`
-  - 通过 SMTP 发送邮件，附 Excel
-- 上传 `paper_tracking.xlsx` 作为 Actions artifact
+
+调度器逻辑：
+
+1. 读 `data/schedule_cache.json`；
+2. 每天 11:00 / 18:00（北京时间）之后第一次运行刷新缓存，爬 D-1 / D / D+1 赛程页；
+3. 筛选未来 60 分钟内开赛、当天尚未分析过的比赛；
+4. 只导入这些比赛的赔率，按 T-60 + 只做让球方 + conf≥50 分析；
+5. 赔率不足的场次跳过；
+6. 有 `actionable=是` 时写 Excel、`tracking/actionable_YYYY-MM-DD.json`，并发邮件；
+7. 更新 `data/scheduler_state.json` 去重；
+8. 把 `data/` 与 `tracking/` 的结果提交回仓库（需要 `contents: write`）。
+
+> `data/` 只存调度缓存/状态两个小 JSON；`out/` 和 `data/*.js` 在 Actions 里不生成。
 
 需要配置的 GitHub Secrets：
 

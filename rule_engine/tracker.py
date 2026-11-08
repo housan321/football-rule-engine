@@ -14,7 +14,7 @@ from .features import build_asian_features, build_company_views
 from .settlement import settle_asian
 
 SHEET = "paper_tracking"
-INFO_SHEET = "说明"
+LEGACY_INFO_SHEET = "说明"
 DEFAULT_TRACKER_PATH = "tracking/paper_tracking.xlsx"
 
 COLUMNS: list[tuple[str, str]] = [
@@ -115,30 +115,6 @@ def result_to_tracker_row(result: AnalysisResult) -> dict:
     }
 
 
-def _write_info_sheet(wb: Workbook) -> None:
-    if INFO_SHEET in wb.sheetnames:
-        return
-    ws = wb.create_sheet(INFO_SHEET, 0)
-    lines = [
-        ("盘口规则引擎 · 纸面跟踪", True),
-        ("", False),
-        ("本文件由 `rule_engine track` 生成，只记录 actionable=是 的场次。", False),
-        ("result / profit / CLV 由 `python -m rule_engine track-update --excel <file>` 回填。", False),
-        ("CLV 有利：收盘时同一侧盘口更差（你的下注价更好）或水位更低。", False),
-        ("side_line 为下注方视角：负数=让球方，0=平手，正数=受让方。", False),
-        ("", False),
-        ("常用命令：", True),
-        (f"python -m rule_engine track --ids 3010473 --excel {DEFAULT_TRACKER_PATH}", False),
-        (f"python -m rule_engine track-update --excel {DEFAULT_TRACKER_PATH}", False),
-    ]
-    for idx, (text, bold) in enumerate(lines, 1):
-        cell = ws.cell(idx, 1, text)
-        cell.font = Font(bold=bold)
-        cell.alignment = Alignment(wrap_text=True, vertical="top")
-    ws.column_dimensions["A"].width = 100
-    ws.sheet_view.showGridLines = False
-
-
 def _ensure_headers(ws) -> dict[str, int]:
     existing = {
         str(ws.cell(1, col).value).strip(): col
@@ -183,7 +159,8 @@ def _open_tracker(path: Path):
         wb = Workbook()
         ws = wb.active
         ws.title = SHEET
-    _write_info_sheet(wb)
+    if LEGACY_INFO_SHEET in wb.sheetnames:
+        del wb[LEGACY_INFO_SHEET]
     mapping = _ensure_headers(ws)
     return wb, ws, mapping
 

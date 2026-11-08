@@ -1,0 +1,893 @@
+{
+  "fetched_at": "2026-11-08T12:53:12",
+  "matches": [
+    {
+      "fixture_id": 3041395,
+      "league_id": 273,
+      "kickoff": "2026-11-08T12:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3000170,
+      "league_id": 284,
+      "kickoff": "2026-11-08T12:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3000528,
+      "league_id": 25,
+      "kickoff": "2026-11-08T13:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3000532,
+      "league_id": 25,
+      "kickoff": "2026-11-08T13:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3000166,
+      "league_id": 284,
+      "kickoff": "2026-11-08T13:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3000168,
+      "league_id": 284,
+      "kickoff": "2026-11-08T13:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3107491,
+      "league_id": 15,
+      "kickoff": "2026-11-08T13:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3107492,
+      "league_id": 15,
+      "kickoff": "2026-11-08T13:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3041396,
+      "league_id": 273,
+      "kickoff": "2026-11-08T14:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3000526,
+      "league_id": 25,
+      "kickoff": "2026-11-08T14:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3000171,
+      "league_id": 284,
+      "kickoff": "2026-11-08T14:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3022041,
+      "league_id": 235,
+      "kickoff": "2026-11-08T14:45:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3022036,
+      "league_id": 235,
+      "kickoff": "2026-11-08T15:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3107493,
+      "league_id": 15,
+      "kickoff": "2026-11-08T15:30:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3107508,
+      "league_id": 15,
+      "kickoff": "2026-11-08T15:30:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3000524,
+      "league_id": 25,
+      "kickoff": "2026-11-08T16:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3022039,
+      "league_id": 235,
+      "kickoff": "2026-11-08T16:30:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3062900,
+      "league_id": 1122,
+      "kickoff": "2026-11-08T16:30:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3062901,
+      "league_id": 1122,
+      "kickoff": "2026-11-08T16:30:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3026785,
+      "league_id": 30,
+      "kickoff": "2026-11-08T18:30:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3012343,
+      "league_id": 10,
+      "kickoff": "2026-11-08T19:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3023821,
+      "league_id": 157,
+      "kickoff": "2026-11-08T19:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3023822,
+      "league_id": 157,
+      "kickoff": "2026-11-08T19:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 2998279,
+      "league_id": 7,
+      "kickoff": "2026-11-08T19:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3037153,
+      "league_id": 700,
+      "kickoff": "2026-11-08T19:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3037154,
+      "league_id": 700,
+      "kickoff": "2026-11-08T19:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 2996202,
+      "league_id": 16,
+      "kickoff": "2026-11-08T19:15:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 2996542,
+      "league_id": 17,
+      "kickoff": "2026-11-08T19:15:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 2993861,
+      "league_id": 34,
+      "kickoff": "2026-11-08T19:30:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3037155,
+      "league_id": 700,
+      "kickoff": "2026-11-08T19:30:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3039936,
+      "league_id": 137,
+      "kickoff": "2026-11-08T20:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 2998998,
+      "league_id": 129,
+      "kickoff": "2026-11-08T20:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 2999000,
+      "league_id": 129,
+      "kickoff": "2026-11-08T20:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3037156,
+      "league_id": 700,
+      "kickoff": "2026-11-08T20:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3062902,
+      "league_id": 1122,
+      "kickoff": "2026-11-08T20:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3085301,
+      "league_id": 766,
+      "kickoff": "2026-11-08T20:15:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3019182,
+      "league_id": 9,
+      "kickoff": "2026-11-08T20:30:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3019184,
+      "league_id": 9,
+      "kickoff": "2026-11-08T20:30:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3019187,
+      "league_id": 9,
+      "kickoff": "2026-11-08T20:30:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3003611,
+      "league_id": 5,
+      "kickoff": "2026-11-08T20:30:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3098387,
+      "league_id": 279,
+      "kickoff": "2026-11-08T20:45:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3101709,
+      "league_id": 301,
+      "kickoff": "2026-11-08T20:55:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3101710,
+      "league_id": 301,
+      "kickoff": "2026-11-08T20:55:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3013754,
+      "league_id": 31,
+      "kickoff": "2026-11-08T21:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3014164,
+      "league_id": 33,
+      "kickoff": "2026-11-08T21:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3000848,
+      "league_id": 27,
+      "kickoff": "2026-11-08T21:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3085228,
+      "league_id": 13,
+      "kickoff": "2026-11-08T21:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3085229,
+      "league_id": 13,
+      "kickoff": "2026-11-08T21:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3085230,
+      "league_id": 13,
+      "kickoff": "2026-11-08T21:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 2912326,
+      "league_id": 26,
+      "kickoff": "2026-11-08T21:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 2912327,
+      "league_id": 26,
+      "kickoff": "2026-11-08T21:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3026780,
+      "league_id": 30,
+      "kickoff": "2026-11-08T21:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 2998278,
+      "league_id": 7,
+      "kickoff": "2026-11-08T21:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3022034,
+      "league_id": 235,
+      "kickoff": "2026-11-08T21:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3012345,
+      "league_id": 10,
+      "kickoff": "2026-11-08T21:15:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 2996203,
+      "league_id": 16,
+      "kickoff": "2026-11-08T21:30:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3010667,
+      "league_id": 3,
+      "kickoff": "2026-11-08T21:30:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3010671,
+      "league_id": 3,
+      "kickoff": "2026-11-08T21:30:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 2912936,
+      "league_id": 22,
+      "kickoff": "2026-11-08T21:30:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3003198,
+      "league_id": 6,
+      "kickoff": "2026-11-08T21:45:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3003940,
+      "league_id": 36,
+      "kickoff": "2026-11-08T22:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3003941,
+      "league_id": 36,
+      "kickoff": "2026-11-08T22:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3003944,
+      "league_id": 36,
+      "kickoff": "2026-11-08T22:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3003948,
+      "league_id": 36,
+      "kickoff": "2026-11-08T22:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 2993858,
+      "league_id": 34,
+      "kickoff": "2026-11-08T22:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 2993860,
+      "league_id": 34,
+      "kickoff": "2026-11-08T22:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 2995395,
+      "league_id": 11,
+      "kickoff": "2026-11-08T22:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3040809,
+      "league_id": 40,
+      "kickoff": "2026-11-08T22:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3023824,
+      "league_id": 157,
+      "kickoff": "2026-11-08T22:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3010472,
+      "league_id": 124,
+      "kickoff": "2026-11-08T22:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3039932,
+      "league_id": 137,
+      "kickoff": "2026-11-08T22:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3039935,
+      "league_id": 137,
+      "kickoff": "2026-11-08T22:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3018859,
+      "league_id": 8,
+      "kickoff": "2026-11-08T22:30:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3003613,
+      "league_id": 5,
+      "kickoff": "2026-11-08T23:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3002111,
+      "league_id": 29,
+      "kickoff": "2026-11-08T23:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3036468,
+      "league_id": 32,
+      "kickoff": "2026-11-08T23:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3036470,
+      "league_id": 32,
+      "kickoff": "2026-11-08T23:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 2998282,
+      "league_id": 7,
+      "kickoff": "2026-11-08T23:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3013758,
+      "league_id": 31,
+      "kickoff": "2026-11-08T23:15:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3014158,
+      "league_id": 33,
+      "kickoff": "2026-11-08T23:15:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3023522,
+      "league_id": 23,
+      "kickoff": "2026-11-08T23:30:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3023525,
+      "league_id": 23,
+      "kickoff": "2026-11-08T23:30:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3023527,
+      "league_id": 23,
+      "kickoff": "2026-11-08T23:30:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3012346,
+      "league_id": 10,
+      "kickoff": "2026-11-08T23:30:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3000847,
+      "league_id": 27,
+      "kickoff": "2026-11-08T23:30:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3000849,
+      "league_id": 27,
+      "kickoff": "2026-11-08T23:30:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3036471,
+      "league_id": 32,
+      "kickoff": "2026-11-08T23:30:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 2912323,
+      "league_id": 26,
+      "kickoff": "2026-11-08T23:30:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 2912324,
+      "league_id": 26,
+      "kickoff": "2026-11-08T23:30:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 2912329,
+      "league_id": 26,
+      "kickoff": "2026-11-08T23:30:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3026778,
+      "league_id": 30,
+      "kickoff": "2026-11-08T23:30:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3000969,
+      "league_id": 121,
+      "kickoff": "2026-11-08T23:30:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3101711,
+      "league_id": 301,
+      "kickoff": "2026-11-08T23:30:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3101712,
+      "league_id": 301,
+      "kickoff": "2026-11-08T23:30:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 2996200,
+      "league_id": 16,
+      "kickoff": "2026-11-08T23:45:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 2996205,
+      "league_id": 16,
+      "kickoff": "2026-11-08T23:45:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 2996543,
+      "league_id": 17,
+      "kickoff": "2026-11-08T23:45:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3014159,
+      "league_id": 33,
+      "kickoff": "2026-11-09T00:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3002107,
+      "league_id": 29,
+      "kickoff": "2026-11-09T00:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3010670,
+      "league_id": 3,
+      "kickoff": "2026-11-09T00:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 2912931,
+      "league_id": 22,
+      "kickoff": "2026-11-09T00:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 2912933,
+      "league_id": 22,
+      "kickoff": "2026-11-09T00:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 2912935,
+      "league_id": 22,
+      "kickoff": "2026-11-09T00:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 2912937,
+      "league_id": 22,
+      "kickoff": "2026-11-09T00:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 2998999,
+      "league_id": 129,
+      "kickoff": "2026-11-09T00:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 2995389,
+      "league_id": 11,
+      "kickoff": "2026-11-09T00:15:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 2995391,
+      "league_id": 11,
+      "kickoff": "2026-11-09T00:15:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 2995392,
+      "league_id": 11,
+      "kickoff": "2026-11-09T00:15:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 2995393,
+      "league_id": 11,
+      "kickoff": "2026-11-09T00:15:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3040807,
+      "league_id": 40,
+      "kickoff": "2026-11-09T00:15:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3003946,
+      "league_id": 36,
+      "kickoff": "2026-11-09T00:30:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3018860,
+      "league_id": 8,
+      "kickoff": "2026-11-09T00:30:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3036472,
+      "league_id": 32,
+      "kickoff": "2026-11-09T00:30:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3003201,
+      "league_id": 6,
+      "kickoff": "2026-11-09T00:30:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 2993859,
+      "league_id": 34,
+      "kickoff": "2026-11-09T01:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3010466,
+      "league_id": 124,
+      "kickoff": "2026-11-09T01:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 2998280,
+      "league_id": 7,
+      "kickoff": "2026-11-09T01:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3022037,
+      "league_id": 235,
+      "kickoff": "2026-11-09T01:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3039934,
+      "league_id": 137,
+      "kickoff": "2026-11-09T01:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3013753,
+      "league_id": 31,
+      "kickoff": "2026-11-09T01:30:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3013761,
+      "league_id": 31,
+      "kickoff": "2026-11-09T01:30:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3014161,
+      "league_id": 33,
+      "kickoff": "2026-11-09T01:30:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3014163,
+      "league_id": 33,
+      "kickoff": "2026-11-09T01:30:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3003619,
+      "league_id": 5,
+      "kickoff": "2026-11-09T01:30:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3012340,
+      "league_id": 10,
+      "kickoff": "2026-11-09T01:45:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3023529,
+      "league_id": 23,
+      "kickoff": "2026-11-09T02:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3026779,
+      "league_id": 30,
+      "kickoff": "2026-11-09T02:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3023825,
+      "league_id": 157,
+      "kickoff": "2026-11-09T02:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 2999001,
+      "league_id": 129,
+      "kickoff": "2026-11-09T02:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3003616,
+      "league_id": 5,
+      "kickoff": "2026-11-09T02:15:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 2912930,
+      "league_id": 22,
+      "kickoff": "2026-11-09T02:15:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3018862,
+      "league_id": 8,
+      "kickoff": "2026-11-09T02:30:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3040811,
+      "league_id": 40,
+      "kickoff": "2026-11-09T02:30:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3001647,
+      "league_id": 118,
+      "kickoff": "2026-11-09T02:30:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 2996204,
+      "league_id": 16,
+      "kickoff": "2026-11-09T03:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3036473,
+      "league_id": 32,
+      "kickoff": "2026-11-09T03:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3003200,
+      "league_id": 6,
+      "kickoff": "2026-11-09T03:15:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 2993857,
+      "league_id": 34,
+      "kickoff": "2026-11-09T03:45:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 2995397,
+      "league_id": 11,
+      "kickoff": "2026-11-09T03:45:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3013752,
+      "league_id": 31,
+      "kickoff": "2026-11-09T04:00:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3023523,
+      "league_id": 23,
+      "kickoff": "2026-11-09T04:30:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3023526,
+      "league_id": 23,
+      "kickoff": "2026-11-09T04:30:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 2962733,
+      "league_id": 2,
+      "kickoff": "2026-11-09T06:30:00",
+      "schedule_page": "20261108"
+    },
+    {
+      "fixture_id": 3022040,
+      "league_id": 235,
+      "kickoff": "2026-11-10T00:30:00",
+      "schedule_page": "20261109"
+    },
+    {
+      "fixture_id": 2912932,
+      "league_id": 22,
+      "kickoff": "2026-11-10T02:00:00",
+      "schedule_page": "20261109"
+    },
+    {
+      "fixture_id": 3010470,
+      "league_id": 124,
+      "kickoff": "2026-11-10T02:00:00",
+      "schedule_page": "20261109"
+    },
+    {
+      "fixture_id": 3014162,
+      "league_id": 33,
+      "kickoff": "2026-11-10T03:30:00",
+      "schedule_page": "20261109"
+    },
+    {
+      "fixture_id": 3023826,
+      "league_id": 157,
+      "kickoff": "2026-11-10T04:15:00",
+      "schedule_page": "20261109"
+    }
+  ]
+}
