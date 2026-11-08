@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from io import BytesIO
 from pathlib import Path
 from typing import Optional
 
@@ -113,6 +114,31 @@ def result_to_tracker_row(result: AnalysisResult) -> dict:
         "notes": "；".join(result.filter_notes),
         "updated_at": "",
     }
+
+
+def build_actionable_workbook(rows: list[dict]) -> bytes:
+    """Build an in-memory workbook containing only the given actionable rows.
+
+    Used for the per-run email attachment so the email never carries the whole
+    cumulative paper_tracking.xlsx history.
+    """
+    wb = Workbook()
+    ws = wb.active
+    ws.title = SHEET
+    for col, (_key, label) in enumerate(COLUMNS, 1):
+        cell = ws.cell(1, col, label)
+        cell.fill = HEADER_FILL
+        cell.font = HEADER_FONT
+        cell.alignment = HEADER_ALIGN
+        ws.column_dimensions[get_column_letter(col)].width = WIDTHS.get(label, 14)
+    for row_idx, row in enumerate(rows, 2):
+        for col, (key, _label) in enumerate(COLUMNS, 1):
+            ws.cell(row_idx, col, row.get(key, ""))
+    ws.freeze_panes = "A2"
+    ws.auto_filter.ref = ws.dimensions
+    buf = BytesIO()
+    wb.save(buf)
+    return buf.getvalue()
 
 
 def _ensure_headers(ws) -> dict[str, int]:

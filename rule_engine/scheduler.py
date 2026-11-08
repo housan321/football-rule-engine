@@ -13,7 +13,7 @@ from .ingest import crawl
 from .ingest.all import main as ingest_main
 from .leagues import LEAGUE_IDS
 from .notify import email_config_from_env, send_actionable_email
-from .tracker import append_rows, result_to_tracker_row
+from .tracker import append_rows, build_actionable_workbook, result_to_tracker_row
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "data"
@@ -23,7 +23,7 @@ STATE_PATH = DATA_DIR / "scheduler_state.json"
 EXCEL_PATH = TRACKING_DIR / "paper_tracking.xlsx"
 
 TZ = ZoneInfo(os.environ.get("APP_TIMEZONE", "Asia/Shanghai"))
-REFRESH_HOURS = (11, 18)  # Beijing time: refresh the schedule cache after 11:00 / 18:00
+REFRESH_HOURS = (11, 16)  # Beijing time: refresh the schedule cache after 11:00 / 16:00
 WINDOW_MINUTES = int(os.environ.get("SCHEDULE_WINDOW_MINUTES", "60"))
 ANALYSIS_MINUTES = int(os.environ.get("ANALYSIS_DECISION_MINUTES", "60"))
 MIN_CONFIDENCE = int(os.environ.get("SCHEDULE_MIN_CONFIDENCE", "50"))
@@ -132,7 +132,12 @@ def collect_schedule(now: datetime) -> list[dict]:
     return result
 
 
-def load_or_refresh_schedule(now: datetime) -> list[dict]:
+def load_or_refresh_schedule(now: datetime) -> tuple[list[dict], bool]:
+    """Return ``(matches, refreshed)``.
+
+    ``refreshed`` is True only when the cache was stale and a crawl succeeded,
+    i.e. the first run after 11:00 / 16:00.
+    """
     cache = load_cache()
     if cache_is_valid(cache, now):
         matches = cache.get("matches", [])
@@ -140,16 +145,31 @@ def load_or_refresh_schedule(now: datetime) -> list[dict]:
             f"  schedule cache: {len(matches)} fixture(s), "
             f"fetched_at={cache.get('fetched_at')}"
         )
-        return matches
+        return matches, False
     print("  schedule cache stale/missing -> refresh")
     try:
-        return collect_schedule(now)
+        return collect_schedule(now), True
     except Exception as exc:  # noqa: BLE001 - keep serving the stale cache
         print(f"  [warn] schedule refresh failed: {exc}")
         cached = cache.get("matches", [])
         if cached:
             print(f"  using stale cache: {len(cached)} fixture(s)")
-        return cached
+        return cached, False
+
+
+def settle_tracker(now: datetime) -> None:
+    """Backfill result/profit/CLV whenever the schedule cache is refreshed.
+
+    Settlement is intentionally tied to the 11:00 / 16:00 refresh runs instead
+    of every 30-minute poll, so the live DB import cost is paid twice a day.
+    """
+    from .settle import run as settle_run
+
+    print("  schedule refreshed -> settle finished tracker rows")
+    try:
+        settle_run(now)
+    except Exception as exc:  # noqa: BLE001 - settlement must not stop the scan
+        print(f"  [warn] settlement failed: {exc}")
 
 
 def load_state(now: datetime) -> dict:
@@ -212,7 +232,9 @@ def append_actionable_json(results, now: datetime) -> Path:
 def run_once(now: datetime) -> int:
     state = load_state(now)
     done = {int(x) for x in state.get("analyzed", [])}
-    matches = load_or_refresh_schedule(now)
+    matches, refreshed = load_or_refresh_schedule(now)
+    if refreshed:
+        settle_tracker(now)
     due = due_matches(matches, done, now)
     if not due:
         print(
@@ -291,7 +313,13 @@ def run_once(now: datetime) -> int:
             print("  [warn] email skipped: SMTP_HOST / MAIL_FROM / MAIL_TO not configured")
         else:
             try:
-                sent = send_actionable_email(results, EXCEL_PATH, email_cfg)
+                attachment = (
+                    f"actionable_{now.strftime('%Y-%m-%d_%H%M')}.xlsx",
+                    build_actionable_workbook(rows),
+                )
+                sent = send_actionable_email(
+                    results, email_cfg, attachment=attachment
+                )
                 print(
                     f"  [email] sent {sent} fixture(s) to "
                     f"{', '.join(email_cfg.mail_to)}"

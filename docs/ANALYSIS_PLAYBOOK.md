@@ -567,13 +567,14 @@ python -m rule_engine track-update --excel tracking/paper_tracking.xlsx
 调度器逻辑：
 
 1. 读 `data/schedule_cache.json`；
-2. 每天 11:00 / 18:00（北京时间）之后第一次运行刷新缓存，爬 D-1 / D / D+1 赛程页；
-3. 筛选未来 60 分钟内开赛、当天尚未分析过的比赛；
-4. 只导入这些比赛的赔率，按 T-60 + 只做让球方 + conf≥50 分析；
-5. 赔率不足的场次跳过；
-6. 有 `actionable=是` 时写 Excel、`tracking/actionable_YYYY-MM-DD.json`，并发邮件；
-7. 更新 `data/scheduler_state.json` 去重；
-8. 把 `data/` 与 `tracking/` 的结果提交回仓库（需要 `contents: write`）。
+2. 每天 11:00 / 16:00（北京时间）之后第一次运行刷新缓存，爬 D-1 / D / D+1 赛程页；
+3. 刷新成功后顺带结算已结束场次，回填 `result` / `profit` / CLV 到 `paper_tracking.xlsx`，并同步 `actionable_*.json`；
+4. 筛选未来 60 分钟内开赛、当天尚未分析过的比赛；
+5. 只导入这些比赛的赔率，按 T-60 + 只做让球方 + conf≥50 分析；
+6. 赔率不足的场次跳过；
+7. 有 `actionable=是` 时写 Excel、`tracking/actionable_YYYY-MM-DD.json`，邮件只发本轮新增 actionable；
+8. 更新 `data/scheduler_state.json` 去重；
+9. 把 `data/` 与 `tracking/` 的结果提交回仓库（需要 `contents: write`）。
 
 > `data/` 只存调度缓存/状态两个小 JSON；`out/` 和 `data/*.js` 在 Actions 里不生成。
 

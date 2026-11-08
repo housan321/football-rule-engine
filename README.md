@@ -414,16 +414,20 @@ python -m rule_engine import --dates 2026-11-08 --all-leagues
 调度器逻辑（参考 `euro_asian_task-main`）：
 
 1. 读 `data/schedule_cache.json`；
-2. 每天 **11:00 / 18:00（北京时间）之后第一次运行**自动爬 D-1 / D / D+1 赛程页，刷新缓存；
+2. 每天 **11:00 / 16:00（北京时间）之后第一次运行**自动爬 D-1 / D / D+1 赛程页，刷新缓存；
 3. 筛选未来 **60 分钟**内开赛、且今天尚未分析过的比赛；
 4. 只导入这些比赛的赔率，按 **T-60 + 只做让球方 + conf≥50** 分析；
 5. 赔率不足的场次跳过；
 6. 有 `actionable=是` 时：
    - 写 `tracking/paper_tracking.xlsx`
    - 追加 `tracking/actionable_YYYY-MM-DD.json`
-   - 通过 SMTP 发邮件，附 Excel
+   - 通过 SMTP 发邮件：正文只列**本轮新增** actionable；附件是只含本轮新增场次的小 Excel，不再附完整的 `paper_tracking.xlsx`
 7. 更新 `data/scheduler_state.json` 去重；
-8. 把 `data/` 与 `tracking/` 的结果提交回仓库。
+8. **赛程刷新成功后**自动结算已结束场次（只在 11:00 / 16:00 之后的第一次运行触发，不是每 30 分钟都跑）：
+   - 从 `paper_tracking.xlsx` 中挑出开赛超过 3 小时、仍未回填 `result` 的场次；
+   - 重新导入这些场次的赔率/比分，回填 `result`、`profit`、CLV 盘口/水位；
+   - 把回填结果同步到对应的 `tracking/actionable_YYYY-MM-DD.json`；
+9. 把 `data/` 与 `tracking/` 的结果提交回仓库。
 
 > `data/` 只存调度缓存/状态两个小 JSON，不再生成比赛 HTML/JSON；`out/` 在 Actions 里不使用。
 >
@@ -499,7 +503,9 @@ MAIL_FROM=... MAIL_TO=... \
 python -m rule_engine run --experimental-default --within-minutes 60
 ```
 
-`--no-email` 可关闭邮件。每次运行是临时 MySQL/临时 Excel，文件不会跨运行累计；当前方案是每次邮件附件 + artifact。
+`--no-email` 可关闭邮件。每次运行的 MySQL 是临时容器，但
+`tracking/paper_tracking.xlsx` 和 `tracking/actionable_*.json` 会提交回仓库，
+因此历史和结算结果可以跨运行累计。邮件只包含本轮新增的 actionable（正文 + 本轮小 Excel），artifact 作为额外备份。
 
 ## 项目结构
 
@@ -517,8 +523,9 @@ football-rule-engine/
     backtest.py   # Phase 2 回测 + 分桶统计
     walkforward.py # Phase 3 月度滚动样本外验证
     tracker.py    # 纸面跟踪 Excel（actionable 场次、result、CLV）
-    scheduler.py  # 赛程缓存 + 30 分钟轮询 + 邮件 + 提交结果
-    notify.py     # SMTP 邮件通知（actionable + Excel 附件）
+    scheduler.py  # 赛程缓存 + 30 分钟轮询 + 11/16 点结算回填 + 邮件 + 提交结果
+    settle.py     # 回填已结束场次的 result/profit/CLV，并同步 actionable JSON
+    notify.py     # SMTP 邮件通知（仅本轮新增 actionable + 小 Excel）
     init_db.py    # 用 sql/schema.sql 初始化 MySQL
     report.py     # 仅结论段 HTML + JSON
     cli.py        # analyze / scan / backtest / import / run / track
@@ -545,6 +552,7 @@ football-rule-engine/
     test_walkforward.py
     test_tracker.py
     test_scheduler.py
+    test_settle.py
     test_notify.py
     test_init_db.py
     test_ingest_imports.py

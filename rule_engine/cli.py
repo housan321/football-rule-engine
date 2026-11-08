@@ -30,6 +30,7 @@ from .report import write_outputs
 from .tracker import (
     DEFAULT_TRACKER_PATH,
     append_rows as append_tracker_rows,
+    build_actionable_workbook,
     result_to_tracker_row,
     update_tracking_results,
 )
@@ -527,11 +528,11 @@ def cmd_run(args) -> int:
         conn.close()
 
     actionable_results = [r for r in results if r.actionable]
+    rows = [result_to_tracker_row(r) for r in actionable_results]
     tracked_rows = len(actionable_results)
     tracked_added = 0
     tracked_updated = 0
     if not args.no_track:
-        rows = [result_to_tracker_row(r) for r in actionable_results]
         try:
             tracked_added, tracked_updated = append_tracker_rows(args.excel, rows)
         except OSError as exc:
@@ -550,8 +551,12 @@ def cmd_run(args) -> int:
             )
         else:
             try:
+                attachment = (
+                    f"actionable_{datetime.now():%Y-%m-%d_%H%M}.xlsx",
+                    build_actionable_workbook(rows),
+                )
                 sent = send_actionable_email(
-                    results, args.excel, email_cfg
+                    results, email_cfg, attachment=attachment
                 )
                 print(
                     f"[email] sent {sent} actionable fixture(s) to "

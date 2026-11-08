@@ -3,13 +3,18 @@ from __future__ import annotations
 import tempfile
 import unittest
 from datetime import datetime
+from io import BytesIO
 from pathlib import Path
 
 from openpyxl import load_workbook
 
 from rule_engine.engine import AnalysisResult
 from rule_engine.models import Match
-from rule_engine.tracker import append_rows, result_to_tracker_row
+from rule_engine.tracker import (
+    append_rows,
+    build_actionable_workbook,
+    result_to_tracker_row,
+)
 
 
 def make_result(fixture_id: int = 1, confidence: int = 50) -> AnalysisResult:
@@ -82,6 +87,15 @@ class TrackerTests(unittest.TestCase):
             self.assertEqual((added, updated), (1, 0))
             wb = load_workbook(path)
             self.assertEqual(wb["paper_tracking"].max_row, 3)
+
+    def test_build_actionable_workbook_only_contains_given_rows(self):
+        row = result_to_tracker_row(make_result(fixture_id=7))
+        wb = load_workbook(BytesIO(build_actionable_workbook([row])))
+        ws = wb["paper_tracking"]
+        header = {cell.value: cell.column for cell in ws[1]}
+        self.assertEqual(ws.max_row, 2)
+        self.assertEqual(ws.cell(2, header["fixture_id"]).value, 7)
+        self.assertEqual(ws.cell(2, header["可下注"]).value, "是")
 
 
 if __name__ == "__main__":

@@ -4,7 +4,6 @@ import os
 import smtplib
 from dataclasses import dataclass
 from email.message import EmailMessage
-from pathlib import Path
 from typing import Optional
 
 from .engine import AnalysisResult
@@ -108,11 +107,14 @@ def format_actionable_body(results: list[AnalysisResult]) -> str:
 
 def send_actionable_email(
     results: list[AnalysisResult],
-    excel_path: str | Path,
     config: EmailConfig,
+    attachment: tuple[str, bytes] | None = None,
     subject_prefix: str = "[盘口引擎]",
 ) -> int:
-    """Send one email with the actionable fixtures and optional Excel attachment.
+    """Send one email listing only this run's actionable fixtures.
+
+    The optional attachment is a per-run Excel built from the new actionable
+    rows; the cumulative paper_tracking.xlsx is never attached.
 
     Returns the number of actionable fixtures included.
     """
@@ -129,13 +131,13 @@ def send_actionable_email(
     message["To"] = ", ".join(config.mail_to)
     message.set_content(format_actionable_body(results))
 
-    path = Path(excel_path)
-    if path.exists():
+    if attachment is not None:
+        filename, payload = attachment
         message.add_attachment(
-            path.read_bytes(),
+            payload,
             maintype="application",
             subtype="vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            filename=path.name,
+            filename=filename,
         )
 
     if config.use_ssl:

@@ -76,12 +76,44 @@ class NotifyTests(unittest.TestCase):
             host="127.0.0.1", port=25, mail_from="a@example.com",
             mail_to=["b@example.com"],
         )
-        self.assertEqual(
-            send_actionable_email(
-                [make_result(False)], "tracking/none.xlsx", cfg
-            ),
-            0,
+        self.assertEqual(send_actionable_email([make_result(False)], cfg), 0)
+
+    def test_send_attaches_only_the_provided_rows(self):
+        cfg = EmailConfig(
+            host="127.0.0.1", port=25, mail_from="a@example.com",
+            mail_to=["b@example.com"], use_tls=False,
         )
+        sent_messages = []
+
+        class FakeSMTP:
+            def __init__(self, *args, **kwargs):
+                pass
+
+            def ehlo(self):
+                pass
+
+            def login(self, user, password):
+                pass
+
+            def send_message(self, message):
+                sent_messages.append(message)
+
+            def quit(self):
+                pass
+
+        with patch("rule_engine.notify.smtplib.SMTP", FakeSMTP):
+            sent = send_actionable_email(
+                [make_result(True), make_result(False)],
+                cfg,
+                attachment=("per_run.xlsx", b"only-new-rows"),
+            )
+
+        self.assertEqual(sent, 1)
+        message = sent_messages[0]
+        attachments = list(message.iter_attachments())
+        self.assertEqual(len(attachments), 1)
+        self.assertEqual(attachments[0].get_filename(), "per_run.xlsx")
+        self.assertEqual(attachments[0].get_payload(decode=True), b"only-new-rows")
 
 
 if __name__ == "__main__":
