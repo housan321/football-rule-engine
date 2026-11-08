@@ -295,18 +295,44 @@ def _schedule_kickoff(row_text, page_yyyymmdd):
         return None
 
 
+_SCHEDULE_ROW_RE = re.compile(r"<tr\b[^>]*>.*?</tr>", re.I | re.S)
+_SCHEDULE_SID_RE = re.compile(r"""\bsid\s*=\s*["']?(\d+)""", re.I)
+_SCHEDULE_NAME_RE = re.compile(r"""\bname\s*=\s*["']([^"']*)["']""", re.I)
+_SCHEDULE_TD_RE = re.compile(r"<td\b[^>]*>(.*?)</td>", re.I | re.S)
+_TEAM_RANK_RE = re.compile(r"^\s*\[\d+\]\s*|\s*\[\d+\]\s*$")
+
+
+def _schedule_row_cells(block: str) -> list[str]:
+    """Return the text of each <td> in a schedule row."""
+    cells = []
+    for raw in _SCHEDULE_TD_RE.findall(block):
+        text = re.sub(r"<[^>]+>", " ", raw)
+        cells.append(" ".join(text.split()))
+    return cells
+
+
+def clean_team_cell(value: str) -> str:
+    """Strip the ranking marker (e.g. ``[3]``) from a schedule team cell."""
+    return " ".join(_TEAM_RANK_RE.sub("", value or "").split())
+
+
 def _iter_schedule_rows_full(text):
-    """Yield (sid, name-attribute, row-text) from the schedule table."""
-    for block in re.findall(r"<tr\b[^>]*>.*?</tr>", text, re.I | re.S):
-        sid_match = re.search(r"""\bsid\s*=\s*["']?(\d+)""", block, re.I)
+    """Yield (sid, name-attribute, row-text, cells) from the schedule table.
+
+    ``cells`` follows the titan007 layout: 0=league, 1=kickoff, 3=home,
+    4=score, 5=away.
+    """
+    for block in _SCHEDULE_ROW_RE.findall(text):
+        sid_match = _SCHEDULE_SID_RE.search(block)
         if not sid_match:
             continue
-        name_match = re.search(r"""\bname\s*=\s*["']([^"']*)["']""", block, re.I)
-        row_text = re.sub(r"<[^>]+>", " ", block)
+        name_match = _SCHEDULE_NAME_RE.search(block)
+        cells = _schedule_row_cells(block)
         yield (
             sid_match.group(1),
             name_match.group(1) if name_match else "",
-            row_text,
+            " ".join(cells),
+            cells,
         )
 
 
@@ -346,7 +372,7 @@ def discover_upcoming_fixtures(
         text = decode_html(body)
         rows = list(_iter_schedule_rows_full(text))
         logger.info("schedule %s: %d fixture row(s)", yyyymmdd, len(rows))
-        for sid, league_raw, row_text in rows:
+        for sid, league_raw, row_text, _cells in rows:
             if max_fixtures is not None and len(fixtures) >= max_fixtures:
                 return fixtures
             if not sid.isdigit() or int(sid) in seen:

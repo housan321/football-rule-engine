@@ -413,7 +413,7 @@ python -m rule_engine import --dates 2026-11-08 --all-leagues
 
 调度器逻辑（参考 `euro_asian_task-main`）：
 
-1. 读 `data/schedule_cache.json`；
+1. 读 `data/schedule_cache.json`（含 `league` 联赛名、`home` 主队、`away` 客队）；
 2. 每天 **11:00 / 16:00（北京时间）之后第一次运行**自动爬 D-1 / D / D+1 赛程页，刷新缓存；
 3. 筛选未来 **60 分钟**内开赛、且今天尚未分析过的比赛；
 4. 只导入这些比赛的赔率，按 **T-60 + 只做让球方 + conf≥50** 分析；
@@ -429,7 +429,7 @@ python -m rule_engine import --dates 2026-11-08 --all-leagues
    - 把回填结果同步到对应的 `tracking/actionable_YYYY-MM-DD.json`；
 9. 把 `data/` 与 `tracking/` 的结果提交回仓库。
 
-> `data/` 只存调度缓存/状态两个小 JSON，不再生成比赛 HTML/JSON；`out/` 在 Actions 里不使用。
+> `data/schedule_cache.json` 每场比赛包含 `fixture_id`、`league_id`、`league`（联赛名）、`home`、`away`、`kickoff`、`schedule_page`；`data/` 只存调度缓存/状态两个小 JSON，不再生成比赛 HTML/JSON；`out/` 在 Actions 里不使用。
 >
 > workflow 需要 `permissions: contents: write`，每次运行把
 > `data/schedule_cache.json`、`data/scheduler_state.json`、

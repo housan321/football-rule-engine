@@ -96,7 +96,7 @@ def collect_schedule(now: datetime) -> list[dict]:
         text = crawl.decode_html(body)
         rows = list(crawl._iter_schedule_rows_full(text))
         print(f"  schedule {yyyymmdd}: {len(rows)} row(s)")
-        for sid, league_raw, row_text in rows:
+        for sid, league_raw, row_text, cells in rows:
             if not sid.isdigit():
                 continue
             prefix = league_raw.split(",", 1)[0].strip()
@@ -112,9 +112,15 @@ def collect_schedule(now: datetime) -> list[dict]:
             if kickoff > now + timedelta(hours=40):
                 continue
             fixture_id = int(sid)
+            league = cells[0] if len(cells) > 0 else ""
+            home = crawl.clean_team_cell(cells[3]) if len(cells) > 3 else ""
+            away = crawl.clean_team_cell(cells[5]) if len(cells) > 5 else ""
             matches[fixture_id] = {
                 "fixture_id": fixture_id,
                 "league_id": league_id,
+                "league": league,
+                "home": home,
+                "away": away,
                 "kickoff": _iso(kickoff),
                 "schedule_page": yyyymmdd,
             }

@@ -105,6 +105,43 @@ class SchedulerTests(unittest.TestCase):
             settle_tracker(now)
         run.assert_called_once_with(now)
 
+    def test_collect_schedule_includes_league_and_team_names(self):
+        html = """
+        <table id="table_live">
+          <tr sId="3041395" name="273,1">
+            <td>澳超</td><td>11-8 12:00</td><td></td>
+            <td align="right">[6] 麦克阿瑟FC</td><td>-</td>
+            <td align="left">布里斯班狮吼 [8]</td><td></td>
+          </tr>
+          <tr sId="9999999" name="999,1">
+            <td>不在白名单</td><td>11-8 13:00</td><td></td>
+            <td>[1] A</td><td>-</td><td>B [2]</td><td></td>
+          </tr>
+        </table>
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            with patch.object(scheduler, "DATA_DIR", tmp_path), patch.object(
+                scheduler, "CACHE_PATH", tmp_path / "schedule_cache.json"
+            ), patch.object(
+                scheduler.crawl, "find_openssl", return_value=None
+            ), patch.object(
+                scheduler.crawl,
+                "fetch_url",
+                return_value=(None, html.encode("utf-8")),
+            ):
+                matches = scheduler.collect_schedule(
+                    datetime(2026, 11, 8, 9, 0)
+                )
+        self.assertEqual(len(matches), 1)
+        match = matches[0]
+        self.assertEqual(match["fixture_id"], 3041395)
+        self.assertEqual(match["league_id"], 273)
+        self.assertEqual(match["league"], "澳超")
+        self.assertEqual(match["home"], "麦克阿瑟FC")
+        self.assertEqual(match["away"], "布里斯班狮吼")
+        self.assertEqual(match["kickoff"], "2026-11-08T12:00:00")
+
 
 if __name__ == "__main__":
     unittest.main()

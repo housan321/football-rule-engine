@@ -43,7 +43,11 @@ class IngestImportTests(unittest.TestCase):
     def test_schedule_time_parser(self):
         from datetime import datetime
 
-        from rule_engine.ingest.crawl import _iter_schedule_rows_full, _schedule_kickoff
+        from rule_engine.ingest.crawl import (
+            _iter_schedule_rows_full,
+            _schedule_kickoff,
+            clean_team_cell,
+        )
 
         html = """
         <tr id='tr1_1' name='30,1' sId='3026782'>
@@ -52,10 +56,13 @@ class IngestImportTests(unittest.TestCase):
         """
         rows = list(_iter_schedule_rows_full(html))
         self.assertEqual(rows[0][0], "3026782")
+        self.assertEqual(rows[0][3], ["League", "11-8 00:00", "Home", "Away"])
         self.assertEqual(
             _schedule_kickoff(rows[0][2], "20261107"),
             datetime(2026, 11, 8, 0, 0),
         )
+        self.assertEqual(clean_team_cell("[6] Home"), "Home")
+        self.assertEqual(clean_team_cell("Away [8]"), "Away")
         self.assertEqual(
             _schedule_kickoff("1-1 00:00", "20261231"),
             datetime(2027, 1, 1, 0, 0),

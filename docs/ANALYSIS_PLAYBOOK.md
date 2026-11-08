@@ -566,7 +566,7 @@ python -m rule_engine track-update --excel tracking/paper_tracking.xlsx
 
 调度器逻辑：
 
-1. 读 `data/schedule_cache.json`；
+1. 读 `data/schedule_cache.json`（含 `league` 联赛名、`home` 主队、`away` 客队）；
 2. 每天 11:00 / 16:00（北京时间）之后第一次运行刷新缓存，爬 D-1 / D / D+1 赛程页；
 3. 刷新成功后顺带结算已结束场次，回填 `result` / `profit` / CLV 到 `paper_tracking.xlsx`，并同步 `actionable_*.json`；
 4. 筛选未来 60 分钟内开赛、当天尚未分析过的比赛；
