@@ -576,8 +576,12 @@ python -m rule_engine track-update --excel tracking/paper_tracking.xlsx
 | `MYSQL_ROOT_PASSWORD` | 临时 MySQL root 密码 |
 | `SMTP_HOST` / `SMTP_PORT` | SMTP 服务器 |
 | `SMTP_USER` / `SMTP_PASSWORD` | SMTP 登录 |
+| `SMTP_SSL` | 可选：465 端口设为 `true` |
+| `SMTP_TLS` | 可选：587 端口默认 `true`，一般不用填 |
 | `MAIL_FROM` | 发件人 |
 | `MAIL_TO` | 收件人，逗号分隔 |
+
+设置位置：GitHub 仓库 → **Settings → Secrets and variables → Actions → New repository secret**，Name 必须与上表完全一致。`MYSQL_ROOT_PASSWORD` 是临时 MySQL 容器的密码，不是本机数据库密码；SMTP 授权码不是邮箱登录密码。
 
 ### cron-job.org 配置
 

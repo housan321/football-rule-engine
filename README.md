@@ -420,8 +420,28 @@ python -m rule_engine import --dates 2026-11-08 --all-leagues
 | `MYSQL_ROOT_PASSWORD` | 临时 MySQL root 密码 |
 | `SMTP_HOST` / `SMTP_PORT` | SMTP 服务器 |
 | `SMTP_USER` / `SMTP_PASSWORD` | SMTP 登录 |
+| `SMTP_SSL` | 可选：465 端口时设为 `true` |
+| `SMTP_TLS` | 可选：587 端口默认 `true`，一般不用填 |
 | `MAIL_FROM` | 发件人 |
 | `MAIL_TO` | 收件人，逗号分隔 |
+
+### 在哪里设置这些 Secrets
+
+1. 打开 GitHub 仓库页面。
+2. 进入 **Settings**（仓库设置，不是个人账号设置）。
+3. 左侧选择 **Secrets and variables → Actions**。
+4. 点 **New repository secret**。
+5. 按上面的名称逐个添加：
+   - **Name**：例如 `MYSQL_ROOT_PASSWORD`（必须完全一致）
+   - **Secret**：对应的值
+6. 点 **Add secret**，重复添加其余 Secret。
+
+说明：
+
+- `MYSQL_ROOT_PASSWORD` 是 **Actions 临时 MySQL 容器**的 root 密码，不是本机 MySQL 密码；随便生成一个强随机字符串即可。
+- SMTP 授权码不是邮箱登录密码。QQ 邮箱在“设置 → 账户 → POP3/SMTP 服务”里生成授权码；Gmail 需要开启两步验证后生成 App Password。
+- Secret 保存后不会再次显示，日志里会自动打码为 `***`。
+- cron-job.org 用的 GitHub PAT **不是** GitHub Secret，而是填在 cron-job.org 的请求头里。
 
 ### cron-job.org 配置
 
