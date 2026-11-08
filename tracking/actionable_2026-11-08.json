@@ -160,5 +160,32 @@
     "clv_favorable": "",
     "notes": "",
     "updated_at": ""
+  },
+  {
+    "analysis_at": "2026-11-08 20:15:00",
+    "fixture_id": 3012345,
+    "kickoff": "2026-11-08 21:15",
+    "league": "俄超",
+    "home": "莫斯科斯巴达",
+    "away": "阿克伦陶里亚蒂",
+    "mode": "pre",
+    "direction": "home",
+    "direction_name": "莫斯科斯巴达",
+    "side_line": -1.75,
+    "is_giving": "是",
+    "confidence": 55,
+    "confidence_label": "中低",
+    "experimental_default": "是",
+    "actionable": "是",
+    "stake": "小注",
+    "engine_line": -1.75,
+    "water": 0.85,
+    "result": "",
+    "profit": "",
+    "clv_line": "",
+    "clv_water": "",
+    "clv_favorable": "",
+    "notes": "",
+    "updated_at": ""
   }
 ]
