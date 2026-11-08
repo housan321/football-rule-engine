@@ -30,6 +30,14 @@ def _env_bool(name: str, default: bool = False) -> bool:
     return value.strip().lower() in ("1", "true", "yes", "on")
 
 
+def _env_optional_bool(name: str) -> bool | None:
+    """Return None when unset/empty, so callers can tell it apart from false."""
+    value = os.environ.get(name)
+    if value is None or not value.strip():
+        return None
+    return value.strip().lower() in ("1", "true", "yes", "on")
+
+
 def _split_addresses(value: str | None) -> list[str]:
     if not value:
         return []
@@ -42,12 +50,12 @@ def email_config_from_env(args=None) -> Optional[EmailConfig]:
     raw_port = (
         os.environ.get("SMTP_PORT")
         or getattr(args, "smtp_port", None)
-        or 587
+        or ""
     )
     try:
-        port = int(raw_port)
+        port = int(raw_port) if str(raw_port).strip() else None
     except (TypeError, ValueError):
-        port = 587
+        port = None
     user = os.environ.get("SMTP_USER") or getattr(args, "smtp_user", None)
     password = os.environ.get("SMTP_PASSWORD") or getattr(
         args, "smtp_password", None
@@ -60,9 +68,16 @@ def email_config_from_env(args=None) -> Optional[EmailConfig]:
     mail_to = _split_addresses(
         os.environ.get("MAIL_TO") or getattr(args, "email_to", None)
     )
-    use_ssl = _env_bool("SMTP_SSL", False) or bool(
-        getattr(args, "smtp_ssl", False)
-    )
+    # An explicit SMTP_SSL always wins. Otherwise port 465 (implicit TLS)
+    # turns SSL on, and any other/unset port keeps the 587 STARTTLS default.
+    explicit_ssl = _env_optional_bool("SMTP_SSL")
+    use_ssl = bool(getattr(args, "smtp_ssl", False))
+    if explicit_ssl is not None:
+        use_ssl = explicit_ssl or use_ssl
+    if port is None:
+        port = 465 if use_ssl else 587
+    if explicit_ssl is None and not use_ssl and port == 465:
+        use_ssl = True
     use_tls = (
         not use_ssl
         and _env_bool("SMTP_TLS", True)
@@ -142,18 +157,40 @@ def send_actionable_email(
             filename=filename,
         )
 
-    if config.use_ssl:
-        smtp = smtplib.SMTP_SSL(config.host, config.port, timeout=30)
-    else:
-        smtp = smtplib.SMTP(config.host, config.port, timeout=30)
+    smtp = None
+    stage = "connect"
     try:
+        if config.use_ssl:
+            smtp = smtplib.SMTP_SSL(config.host, config.port, timeout=30)
+        else:
+            smtp = smtplib.SMTP(config.host, config.port, timeout=30)
+        stage = "ehlo"
         smtp.ehlo()
         if config.use_tls and not config.use_ssl:
+            stage = "starttls"
             smtp.starttls()
             smtp.ehlo()
         if config.user:
+            stage = "login"
             smtp.login(config.user, config.password or "")
+        stage = "send"
         smtp.send_message(message)
+    except (smtplib.SMTPException, OSError) as exc:
+        hint = ""
+        if config.port == 465 and not config.use_ssl:
+            hint = " (port 465 normally requires SMTP_SSL=true)"
+        elif config.use_ssl and config.port not in (465, 994):
+            hint = " (implicit TLS normally uses port 465 or 994)"
+        raise RuntimeError(
+            f"SMTP {stage} failed at {config.host}:{config.port} "
+            f"(ssl={config.use_ssl}, tls={config.use_tls}): {exc}{hint}"
+        ) from exc
     finally:
-        smtp.quit()
+        if smtp is not None:
+            # A failed handshake/send often leaves the socket closed; a second
+            # exception from quit() would hide the real failure above.
+            try:
+                smtp.quit()
+            except Exception:
+                pass
     return len(actionable)

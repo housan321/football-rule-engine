@@ -7,8 +7,9 @@
           <value>
             <TabSessionState>
               <option name="provider" value="claude" />
-              <option name="cwd" value="D:\football-rule-engine" />
-              <option name="model" value="claude-sonnet-5" />
+              <option name="sessionId" value="422bcc4a-7225-42ee-9963-d8b63368fce0" />
+              <option name="cwd" value="F:\PycharmProjects\football-rule-engine" />
+              <option name="model" value="claude-sonnet-5[1m]" />
               <option name="permissionMode" value="default" />
             </TabSessionState>
           </value>

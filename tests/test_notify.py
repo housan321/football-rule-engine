@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import smtplib
 import unittest
 from datetime import datetime
 from unittest.mock import patch
@@ -88,6 +89,48 @@ class NotifyTests(unittest.TestCase):
         self.assertFalse(cfg.use_ssl)
         self.assertTrue(cfg.use_tls)
 
+    def test_port_465_defaults_to_ssl(self):
+        env = {
+            "SMTP_HOST": "smtp.example.com",
+            "SMTP_PORT": "465",
+            "SMTP_USER": "user@example.com",
+            "SMTP_PASSWORD": "secret",
+            "MAIL_TO": "a@example.com",
+        }
+        with patch.dict(os.environ, env, clear=True):
+            cfg = email_config_from_env()
+        self.assertIsNotNone(cfg)
+        self.assertEqual(cfg.port, 465)
+        self.assertTrue(cfg.use_ssl)
+        self.assertFalse(cfg.use_tls)
+
+    def test_ssl_without_port_defaults_to_465(self):
+        env = {
+            "SMTP_HOST": "smtp.example.com",
+            "SMTP_SSL": "true",
+            "SMTP_USER": "user@example.com",
+            "SMTP_PASSWORD": "secret",
+            "MAIL_TO": "a@example.com",
+        }
+        with patch.dict(os.environ, env, clear=True):
+            cfg = email_config_from_env()
+        self.assertIsNotNone(cfg)
+        self.assertEqual(cfg.port, 465)
+        self.assertTrue(cfg.use_ssl)
+
+    def test_explicit_ssl_false_is_respected(self):
+        env = {
+            "SMTP_HOST": "smtp.example.com",
+            "SMTP_PORT": "465",
+            "SMTP_SSL": "false",
+            "MAIL_FROM": "a@example.com",
+            "MAIL_TO": "a@example.com",
+        }
+        with patch.dict(os.environ, env, clear=True):
+            cfg = email_config_from_env()
+        self.assertIsNotNone(cfg)
+        self.assertFalse(cfg.use_ssl)
+
     def test_no_actionable_sends_nothing(self):
         cfg = EmailConfig(
             host="127.0.0.1", port=25, mail_from="a@example.com",
@@ -131,6 +174,46 @@ class NotifyTests(unittest.TestCase):
         self.assertEqual(len(attachments), 1)
         self.assertEqual(attachments[0].get_filename(), "per_run.xlsx")
         self.assertEqual(attachments[0].get_payload(decode=True), b"only-new-rows")
+
+    def test_send_failure_reports_stage_not_quit_error(self):
+        cfg = EmailConfig(
+            host="127.0.0.1", port=587, mail_from="a@example.com",
+            mail_to=["b@example.com"], use_tls=True,
+        )
+
+        class BrokenSMTP:
+            def __init__(self, *args, **kwargs):
+                pass
+
+            def ehlo(self):
+                raise smtplib.SMTPServerDisconnected("Connection unexpectedly closed")
+
+            def quit(self):
+                raise smtplib.SMTPServerDisconnected("Connection unexpectedly closed")
+
+        with patch("rule_engine.notify.smtplib.SMTP", BrokenSMTP):
+            with self.assertRaises(RuntimeError) as ctx:
+                send_actionable_email([make_result(True)], cfg)
+
+        message = str(ctx.exception)
+        self.assertIn("SMTP ehlo failed", message)
+        self.assertIn("127.0.0.1:587", message)
+
+    def test_port_465_without_ssl_reports_hint(self):
+        cfg = EmailConfig(
+            host="127.0.0.1", port=465, mail_from="a@example.com",
+            mail_to=["b@example.com"], use_tls=True,
+        )
+
+        class BrokenSMTP:
+            def __init__(self, *args, **kwargs):
+                raise smtplib.SMTPServerDisconnected("Connection unexpectedly closed")
+
+        with patch("rule_engine.notify.smtplib.SMTP", BrokenSMTP):
+            with self.assertRaises(RuntimeError) as ctx:
+                send_actionable_email([make_result(True)], cfg)
+
+        self.assertIn("SMTP_SSL=true", str(ctx.exception))
 
 
 if __name__ == "__main__":

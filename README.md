@@ -443,10 +443,15 @@ python -m rule_engine import --dates 2026-11-08 --all-leagues
 | `MYSQL_ROOT_PASSWORD` | 临时 MySQL root 密码 |
 | `SMTP_HOST` / `SMTP_PORT` | SMTP 服务器 |
 | `SMTP_USER` / `SMTP_PASSWORD` | SMTP 登录 |
-| `SMTP_SSL` | 可选：465 端口时设为 `true` |
+| `SMTP_SSL` | 可选：465 端口时设为 `true`（代码也会自动把 465 识别为 SSL） |
 | `SMTP_TLS` | 可选：587 端口默认 `true`，一般不用填 |
 | `MAIL_FROM` | 发件人 |
 | `MAIL_TO` | 收件人，逗号分隔 |
+
+> 端口与加密方式必须匹配：**465 = 隐式 SSL**（`SMTP_SSL=true`），**587 = 明文 + STARTTLS**。
+> 若日志出现 `email send failed: Connection unexpectedly closed`，优先检查
+> `SMTP_PORT` 是否为 465 而 `SMTP_SSL` 未开启；`SMTP_SSL` 只接受
+> `true/1/yes/on`（不区分大小写）。
 
 ### 在哪里设置这些 Secrets
 
