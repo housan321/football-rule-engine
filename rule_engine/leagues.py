@@ -56,6 +56,9 @@ LEAGUE_WHITELIST: dict[str, int] = {
     "马来超": 316,
     "阿联酋超": 301,
     "印尼超": 1122,
+    "哥伦甲秋": 250,
+    "墨西联秋":140,
+
 }
 
 LEAGUE_IDS: frozenset[int] = frozenset(LEAGUE_WHITELIST.values())
