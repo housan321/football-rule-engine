@@ -102,14 +102,18 @@ def format_actionable_body(results: list[AnalysisResult]) -> str:
     lines = [
         f"可下注场次：{len(rows)}",
         "",
-        "fixture   联赛        开赛              对阵                                方向             side_line  置信度  操作",
-        "--------  ----------  ----------------  ----------------------------------  --------------  ---------  ------  ----",
+        "fixture   口径   联赛        开赛              对阵                                方向             side_line  置信度  操作",
+        "--------  ------  ----------  ----------------  ----------------------------------  --------------  ---------  ------  ----",
     ]
     for r in rows:
         match = r.match
         side = f"{r.side_line:+.2f}" if r.side_line is not None else "-"
+        delta = round(
+            (match.match_time - r.analysis_time).total_seconds() / 60
+        )
+        stage = f"T-{delta}" if delta > 0 else "-"
         lines.append(
-            f"{match.fixture_id:<8}  {(match.league or '-'):<10}  "
+            f"{match.fixture_id:<8}  {stage:<6}  {(match.league or '-'):<10}  "
             f"{match.match_time.strftime('%Y-%m-%d %H:%M'):<16}  "
             f"{(match.home + ' vs ' + match.away):<34}  "
             f"{r.direction_name:<14}  {side:<9}  {r.confidence:<6}  {r.stake}"

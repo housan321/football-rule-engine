@@ -56,6 +56,11 @@ jobs:
 
       - name: Run scheduler
         env:
+          # Two decision lanes: 30-60 min before kickoff = T-60, 0-30 min = T-30.
+          # T-30 is skipped when the same fixture already has a T-60 actionable bet.
+          SCHEDULE_ENABLE_T30: "true"
+          SCHEDULE_T30_WINDOW_MINUTES: "30"
+          ANALYSIS_T30_MINUTES: "30"
           SMTP_HOST: ${{ secrets.SMTP_HOST }}
           SMTP_PORT: ${{ secrets.SMTP_PORT }}
           SMTP_USER: ${{ secrets.SMTP_USER }}

@@ -50,6 +50,7 @@ class NotifyTests(unittest.TestCase):
         self.assertIn("可下注场次：1", body)
         self.assertIn("123", body)
         self.assertIn("-0.50", body)
+        self.assertIn("T-60", body)
 
     def test_config_from_env(self):
         env = {

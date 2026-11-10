@@ -62,11 +62,17 @@ class TrackerTests(unittest.TestCase):
     def test_row_fields(self):
         row = result_to_tracker_row(make_result())
         self.assertEqual(row["fixture_id"], 1)
+        self.assertEqual(row["stage"], "T-60")
         self.assertEqual(row["side_line"], -0.5)
         self.assertEqual(row["is_giving"], "是")
         self.assertEqual(row["actionable"], "是")
         self.assertEqual(row["experimental_default"], "是")
         self.assertAlmostEqual(row["water"], 0.90)
+
+    def test_row_stage_t30(self):
+        result = make_result()
+        result.analysis_time = datetime(2026, 11, 7, 11, 30)
+        self.assertEqual(result_to_tracker_row(result)["stage"], "T-30")
 
     def test_append_and_update(self):
         with tempfile.TemporaryDirectory() as tmp:

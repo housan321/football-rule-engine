@@ -5,10 +5,13 @@ import tempfile
 import unittest
 from datetime import datetime
 from pathlib import Path
-from unittest.mock import patch
+from types import SimpleNamespace
+from unittest.mock import MagicMock, patch
 
 from rule_engine import scheduler
 from rule_engine.scheduler import (
+    _seed_recent_tracker_state,
+    due_lanes,
     due_matches,
     last_refresh_point,
     load_or_refresh_schedule,
@@ -52,6 +55,150 @@ class SchedulerTests(unittest.TestCase):
         due = due_matches(matches, {4}, datetime(2026, 11, 8, 10, 30))
         self.assertEqual([m["fixture_id"] for m in due], [1])
         self.assertAlmostEqual(due[0]["minutes_to_kickoff"], 30.0)
+
+    def test_due_lanes_split_t60_t30(self):
+        now = datetime(2026, 11, 8, 10, 30)
+        matches = [
+            {"fixture_id": 1, "kickoff": "2026-11-08 11:00"},  # 30 min
+            {"fixture_id": 2, "kickoff": "2026-11-08 11:20"},  # 50 min
+            {"fixture_id": 3, "kickoff": "2026-11-08 11:40"},  # 70 min
+            {"fixture_id": 4, "kickoff": "2026-11-08 10:50"},  # 20 min
+        ]
+        with patch.object(scheduler, "ENABLE_T30", True):
+            t60, t30, blocked = due_lanes(matches, {}, now)
+        self.assertEqual([m["fixture_id"] for m in t60], [2])
+        self.assertEqual([m["fixture_id"] for m in t30], [1, 4])
+        self.assertEqual(blocked, [])
+        self.assertEqual(t60[0]["stage"], "T-60")
+        self.assertEqual(t60[0]["decision_minutes"], 60)
+        self.assertEqual(t30[0]["stage"], "T-30")
+        self.assertEqual(t30[0]["decision_minutes"], 30)
+
+    def test_due_lanes_t60_priority_blocks_t30(self):
+        now = datetime(2026, 11, 8, 11, 35)
+        matches = [{"fixture_id": 1, "kickoff": "2026-11-08 12:00"}]
+        state = {"analyzed": [1], "t30_analyzed": [], "t60_actionable": [1]}
+        with patch.object(scheduler, "ENABLE_T30", True):
+            t60, t30, blocked = due_lanes(matches, state, now)
+        self.assertEqual(t60, [])
+        self.assertEqual(t30, [])
+        self.assertEqual([m["fixture_id"] for m in blocked], [1])
+
+    def test_due_lanes_disabled_t30_keeps_legacy_window(self):
+        now = datetime(2026, 11, 8, 11, 35)
+        matches = [{"fixture_id": 1, "kickoff": "2026-11-08 12:00"}]
+        with patch.object(scheduler, "ENABLE_T30", False):
+            t60, t30, blocked = due_lanes(matches, {}, now)
+        self.assertEqual([m["fixture_id"] for m in t60], [1])
+        self.assertEqual(t30, [])
+        self.assertEqual(blocked, [])
+
+    def test_due_lanes_respects_done_sets(self):
+        now = datetime(2026, 11, 8, 10, 30)
+        matches = [
+            {"fixture_id": 1, "kickoff": "2026-11-08 11:20"},  # T-60
+            {"fixture_id": 2, "kickoff": "2026-11-08 11:00"},  # T-30
+        ]
+        state = {"analyzed": [1], "t30_analyzed": [2], "t60_actionable": []}
+        with patch.object(scheduler, "ENABLE_T30", True):
+            t60, t30, blocked = due_lanes(matches, state, now)
+        self.assertEqual(t60, [])
+        self.assertEqual(t30, [])
+        self.assertEqual(blocked, [])
+
+    def test_seed_recent_tracker_state_recovers_t60_priority(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "tracking.csv"
+            path.write_text(
+                "analysis_at,fixture_id,kickoff\n"
+                "2026-11-08 11:00:00,1,2026-11-08 12:00\n"
+                "2026-11-08 11:30:00,2,2026-11-08 12:00\n"
+                "2026-11-08 08:00:00,3,2026-11-08 09:00\n",
+                encoding="utf-8-sig",
+            )
+            state = {
+                "date": "2026-11-08",
+                "analyzed": [],
+                "t30_analyzed": [],
+                "t60_actionable": [],
+            }
+            with patch.object(scheduler, "TRACKER_PATH", path):
+                _seed_recent_tracker_state(
+                    state, datetime(2026, 11, 8, 11, 35)
+                )
+        self.assertEqual(state["analyzed"], [1])
+        self.assertEqual(state["t60_actionable"], [1])
+        self.assertEqual(state["t30_analyzed"], [2])
+
+    def test_run_once_blocks_t30_when_t60_actionable(self):
+        now = datetime(2026, 11, 8, 11, 35)
+        matches = [
+            {"fixture_id": 1, "kickoff": "2026-11-08 12:00", "league_id": 1}
+        ]
+        state = {
+            "date": "2026-11-08",
+            "analyzed": [1],
+            "t30_analyzed": [],
+            "t60_actionable": [1],
+        }
+        with patch.object(scheduler, "ENABLE_T30", True), patch.object(
+            scheduler, "load_state", return_value=state
+        ), patch.object(
+            scheduler,
+            "load_or_refresh_schedule",
+            return_value=(matches, False),
+        ), patch.object(scheduler, "save_state") as save, patch.object(
+            scheduler, "ingest_main"
+        ) as ingest, patch.object(
+            scheduler, "_analyze_one"
+        ) as analyze:
+            rc = scheduler.run_once(now)
+        self.assertEqual(rc, 0)
+        ingest.assert_not_called()
+        analyze.assert_not_called()
+        self.assertIn(1, save.call_args[0][0]["t30_analyzed"])
+
+    def test_run_once_analyzes_t30_when_t60_had_no_bet(self):
+        now = datetime(2026, 11, 8, 11, 35)
+        matches = [
+            {"fixture_id": 1, "kickoff": "2026-11-08 12:00", "league_id": 1}
+        ]
+        state = {
+            "date": "2026-11-08",
+            "analyzed": [1],
+            "t30_analyzed": [],
+            "t60_actionable": [],
+        }
+        result = SimpleNamespace(
+            actionable=False,
+            direction_name="观察",
+            confidence=40,
+            stake="仅观察",
+        )
+        conn = MagicMock()
+        with patch.object(scheduler, "ENABLE_T30", True), patch.object(
+            scheduler, "load_state", return_value=state
+        ), patch.object(
+            scheduler,
+            "load_or_refresh_schedule",
+            return_value=(matches, False),
+        ), patch.object(scheduler, "save_state") as save, patch.object(
+            scheduler, "ingest_main", return_value=0
+        ) as ingest, patch.object(
+            scheduler, "load_config", return_value=object()
+        ), patch.object(
+            scheduler, "connect", return_value=conn
+        ), patch.object(
+            scheduler, "_analyze_one", return_value=(result, None)
+        ) as analyze:
+            rc = scheduler.run_once(now)
+        self.assertEqual(rc, 1)
+        ingest.assert_called_once()
+        args, kwargs = analyze.call_args
+        self.assertEqual(args[3], 30)
+        self.assertTrue(kwargs["only_giving"])
+        self.assertIn(1, save.call_args[0][0]["t30_analyzed"])
+        conn.close.assert_called_once()
 
     def test_valid_cache_does_not_refresh(self):
         with tempfile.TemporaryDirectory() as tmp:

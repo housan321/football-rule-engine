@@ -96,7 +96,7 @@ python -m rule_engine scan --date 2026-11-05 --only-actionable
 python -m rule_engine scan --date 2026-11-05 --write --out-dir out
 
 # Phase 2：历史回测（T-60 决策，置信度 >=50 才下注）
-python -m rule_engine backtest --from 2026-10-01 --to 2026-11-06 \
+python -m rule_engine backtest --from 2025-08-16 --to 2026-11-09 \
   --decision-minutes 60 --min-confidence 50 \
   --out out/backtest.csv --summary out/backtest_summary.json
 ```
@@ -253,41 +253,49 @@ python -m rule_engine.ingest --help
 - 只使用决策时点之前的亚盘/欧赔，避免未来函数
 - 用 `match_list_all.home_score / away_score` 结算亚盘，支持半赢/半输/走盘
 - 只对 `stake=小注` 且 `confidence >= min_confidence` 的信号下注（默认 45）
+- `--limit` 默认 500 场；全量样本（2718 场）需要显式传 `--limit 5000`
 - 输出逐场 CSV 和按规则/联赛/置信度/盘口/月份分桶的 JSON 汇总
 
 ```bash
-python -m rule_engine backtest --from 2026-10-01 --to 2026-11-06 \
-  --decision-minutes 60 --min-confidence 50 \
+python -m rule_engine backtest --from 2025-08-16 --to 2026-11-09 \
+  --decision-minutes 60 --min-confidence 50 --limit 5000 \
   --out out/backtest.csv --summary out/backtest_summary.json
 ```
 
-本次样本（2025-08-16 → 2026-11-07，1880 场有比分且赔率齐全）：
+本次样本（2025-08-16 → 2026-11-09，2718 场有比分且亚盘/欧赔齐全；2026-11-09 数据库扩充历史数据后重跑）：
 
 | 时期 | conf45 | conf50 | conf50_giving | conf50_receiving |
 |---|---:|---:|---:|---:|
-| 2025-08 ~ 2025-12 | 101 注 / -16.4% | 89 注 / -17.6% | 53 注 / +1.9% | 36 注 / -46.2% |
-| 2026-01 ~ 2026-05 | 114 注 / +3.2% | 104 注 / +1.6% | 63 注 / +15.6% | 41 注 / -20.0% |
-| 2026-08 ~ 2026-11 | 161 注 / -0.9% | 135 注 / +2.0% | 77 注 / +20.6% | 58 注 / -22.8% |
+| 2025-08 ~ 2025-12 | 163 注 / -5.1% | 145 注 / -6.0% | 93 注 / +11.5% | 52 注 / -37.2% |
+| 2026-01 ~ 2026-05 | 184 注 / -5.4% | 165 注 / -6.4% | 97 注 / +9.4% | 68 注 / -28.9% |
+| 2026-08 ~ 2026-11 | 201 注 / +1.3% | 169 注 / +2.4% | 98 注 / +21.6% | 71 注 / -24.1% |
 
 全期合并：
 
 | 变体 | 下注 | 命中率 | ROI | 利润 |
 |---|---:|---:|---:|---:|
-| `conf45_all` | 376 | 49.9% | -3.8% | -14.21 |
-| `conf50_all` | 328 | 50.5% | -3.5% | -11.34 |
-| `conf45_giving` | 211 | 61.2% | **+15.8%** | +33.26 |
-| `conf50_giving` | 193 | 60.6% | **+13.9%** | +26.73 |
-| `conf50_receiving` | 135 | 33.3% | **-28.2%** | -38.06 |
+| `conf45_all` | 548 | 50.5% | -2.9% | -15.61 |
+| `conf50_all` | 479 | 50.6% | -3.2% | -15.20 |
+| `conf45_giving` | 315 | 61.6% | **+16.4%** | +51.60 |
+| `conf50_giving` | 288 | 60.7% | **+14.2%** | +40.95 |
+| `conf50_receiving` | 191 | 32.7% | **-29.4%** | -56.15 |
 
 初步观察：
 
 - **不加盘口过滤时，conf45/conf50 全期为负**；`conf≥50` 单独使用不是可盈利规则。
-- **“只做让球方”是唯一稳定为正的分组**：conf50_giving 193 注、60.6% 命中、+13.9% ROI，三个时期分别 +1.9% / +15.6% / +20.6%。
-- **受让方/PK 三个阶段全负**：-46.2% / -20.0% / -22.8%；全期 -28.2%。
-- **45–49 桶全期 -6.0%**，仍应剔除。
-- 2025 年段是独立于 2026 年发现过程的数据，让球方过滤在该段仍为正。
+- **“只做让球方”是唯一稳定为正的分组**：conf50_giving 288 注、60.7% 命中、+14.2% ROI，三个时期分别 +11.5% / +9.4% / +21.6%。
+- **受让方/PK 三个阶段全负**：-37.2% / -28.9% / -24.1%；全期 -29.4%。
+- **45–49 桶整体 -0.6%，但结构分化**：让球方 27 注 / 70.4% 命中 / **+39.4%** ROI；受让方 42 注 / 35.1% / -26.4%。所以 45–49 只能和“只做让球方”一起用，单独把门槛降到 45 没有优势。
+- **让球方口径下 conf45 略优于 conf50**：315 注 / +16.4% vs 288 注 / +14.2%；增量 45–49 让球方 27 注 / +39.4%（95% CI +7%～+72%，p≈0.02，未校正多重比较）。样本仍小，建议作为实验档而不是直接改默认。
+- 决策时点敏感性：T-30 giving +16.3% / T-60 +14.2% / T-120 +12.1%。T-30 的总体优势**不显著**（p≈0.77），且独立的 2025H2 段仅 +0.2%（T-60 +11.5%）；两者只有 182 场重叠，T-30 波动更大。默认仍用 T-60，详见 `docs/T30_vs_T60_2026-11-09.md`。
+- 同时下注 T-60 + T-30（各 1 单位）：578 注 / +88.24 / ROI +15.3%，但 182 场重叠中 177 场结果相同，基本是**加杠杆而非分散**；最大回撤 -12.47（T-60 -4.28）。更好的合并是“每场一注、T-60 优先 + T-30 独有”：396 注 / +62.51 / ROI +15.8% / 回撤 -6.28。详见 `docs/T30_T60_union_2026-11-09.md`。
+- 新扩充的 2025 年段让球方过滤仍为正（+11.5%），说明不是纯 2026 样本内拟合。
 
 ⚠️ 这是**全样本、样本内分组**结果。Phase 3 已用 walk-forward 做了月度验证；“只做让球方”通过后才建议增加实验开关，而不是直接改默认。
+
+详细分桶（置信度/盘口/规则/联赛/月份）见 `docs/PHASE2_2026-11-09.md`。
+
+规则消融（关闭规则后重新评分）的结论见 `docs/RULE_ABLATION_2026-11-09.md`。该分析用一次性本地脚本完成，当前 CLI **没有**保留 `--disable-rule` 入口；如需复跑，需要重新加消融参数。
 
 ## Phase 3：Walk-forward 样本外验证（扩展样本）
 
@@ -295,13 +303,13 @@ python -m rule_engine backtest --from 2026-10-01 --to 2026-11-06 \
 cd D:\football-rule-engine
 
 # 用全期合并的 conf>=45 CSV 做 walk-forward（推荐，秒级）
-python -m rule_engine walkforward --input out/bt_all_conf45.csv \
+python -m rule_engine walkforward --input out/backtest_conf45.csv \
   --out out/phase3_walkforward_all.json \
   --report out/phase3_walkforward_all.md
 
 # 也可以直接重跑回测再验证（较慢）
-python -m rule_engine walkforward --from 2025-08-16 --to 2026-11-07 \
-  --decision-minutes 60 --out out/phase3_walkforward.json
+python -m rule_engine walkforward --from 2025-08-16 --to 2026-11-09 \
+  --decision-minutes 60 --limit 5000 --out out/phase3_walkforward.json
 ```
 
 方法：
@@ -310,15 +318,15 @@ python -m rule_engine walkforward --from 2025-08-16 --to 2026-11-07 \
 - 候选：`conf50_all`（默认）、`conf50_giving`、`conf45_giving`
 - 控制组：`conf50_receiving`（受让方/PK）
 
-扩展样本 T-60 结果：
+扩展样本 T-60 结果（2026-11-09 重跑，输入 548 注 conf≥45）：
 
 - 月份：2025-08 → 2026-11（2026-06/07 无数据），共 14 个月
-- **Walk-forward 拼接：220 注，59.8% 命中，+29.14 单位，ROI +13.2%**
-- `conf50_giving`：14 个月中 11 个月为正；负月份为 2025-08（-75%，2 注）、2025-10（-35.8%，12 注）、2026-04（-37.3%，3 注）
-- `conf50_receiving`：14 个月中 13 个月为负，仅 2025-08 为正（+37%，3 注）
-- 2025-11 之后，walk-forward 基本持续选择 `conf45_giving` / `conf50_giving`
+- **Walk-forward 拼接：312 注，61.2% 命中，+49.63 单位，ROI +15.9%**
+- `conf50_giving`：14 个月中 11 个月为正；负月份为 2025-09（-0.6%）、2025-10（-14.6%）、2026-04（-42.8%）
+- `conf50_receiving`：14 个月全部为负
+- 选择路径：2025-08 默认 `conf50_all`；2025-09～12 选择 `conf50_giving`；2026-01 起持续选择 `conf45_giving`
 
-⚠️ 候选变体是在看到数据后提出的，仍有选择偏差；但 2025 年段是独立窗口，让球方过滤在该段仍为正（+1.9%），比只看 2026 年更强。目前**不改变实盘默认**，下一步是增加 `--only-giving` 实验开关并纸面跟踪。
+⚠️ 候选变体是在看到数据后提出的，仍有选择偏差；但 2025 年段是独立窗口，让球方过滤在该段仍为正（conf50_giving +11.5%），比只看 2026 年更强。目前**不改变实盘默认**，下一步是增加 `--only-giving` 实验开关并纸面跟踪。
 
 ## 实验默认 gate（Phase 3 Step 1）
 
@@ -332,6 +340,7 @@ python -m rule_engine run --ids 3010473 --experimental-default
 
 - 只做**让球方**（`side_line < 0`，主队让/客队让都算）
 - 置信度 ≥50
+- 45–49 桶在让球方内为正（27 注 / +39.4%），可显式用 `--only-giving --min-confidence 45` 做更激进的实验档；默认仍用 50
 - 未显式传 `--decision-minutes` / `--as-of` 时，自动用 T-60
 - 受让方/PK 或置信度不足的场次**保留方向**，但操作变为“仅观察”，不会消失
 
@@ -366,7 +375,7 @@ python -m rule_engine track-update --excel tracking/paper_tracking.csv
 - 默认只做让球方 + conf≥50；`--all-sides` / `--min-confidence` 可覆盖。
 - 默认 T-60；`--as-of` 可指定固定分析时点。
 - 以 `(analysis_at, fixture_id)` 去重：同一快照重复运行只更新，不新增行；已回填的 result/CLV 不会被覆盖。
-- CSV 包含：分析时间、比赛、方向、side_line、让球方、置信度、实验默认、可下注、操作、引擎盘口、下注水位、result、profit、CLV盘口/水位/有利、备注、回填时间。
+- CSV 包含：分析时间、比赛、**口径（T-60/T-30）**、方向、side_line、让球方、置信度、实验默认、可下注、操作、引擎盘口、下注水位、result、profit、CLV盘口/水位/有利、备注、回填时间。
 - CSV 使用 UTF-8 with BOM（`utf-8-sig`），Excel/WPS 可直接打开且中文不乱码；不再依赖 `openpyxl`。
 
 > `track` 只分析数据库里已有的比赛；数据不新时先运行 `python -m rule_engine run ...` 或 `import`。
@@ -415,8 +424,11 @@ python -m rule_engine import --dates 2026-11-08 --all-leagues
 
 1. 读 `data/schedule_cache.json`（含 `league` 联赛名、`home` 主队、`away` 客队）；
 2. 每天 **11:00 / 16:00（北京时间）之后第一次运行**自动爬 D-1 / D / D+1 赛程页，刷新缓存；
-3. 筛选未来 **60 分钟**内开赛、且今天尚未分析过的比赛；
-4. 只导入这些比赛的赔率，按 **T-60 + 只做让球方 + conf≥50** 分析；
+3. 按开赛时间分两条 lane：
+   - **T-60 lane**：距开赛 **30–60 分钟**，按 `kickoff - 60` 分析；
+   - **T-30 lane**：距开赛 **0–30 分钟**，按 `kickoff - 30` 分析；
+4. 只导入本轮 due 场次的赔率，统一按 **只做让球方 + conf≥50** 分析；
+   - **T-60 优先**：同一场如果 T-60 已经 actionable，就跳过它的 T-30；T-60 没有下注时才允许 T-30；
 5. 赔率不足的场次跳过；
 6. 有 `actionable=是` 时：
    - 写 `tracking/paper_tracking.csv`
@@ -430,6 +442,22 @@ python -m rule_engine import --dates 2026-11-08 --all-leagues
 9. 把 `data/` 与 `tracking/` 的结果提交回仓库。
 
 > `data/schedule_cache.json` 每场比赛包含 `fixture_id`、`league_id`、`league`（联赛名）、`home`、`away`、`kickoff`、`schedule_page`；`data/` 只存调度缓存/状态两个小 JSON，不再生成比赛 HTML/JSON；`out/` 在 Actions 里不使用。
+>
+> **两条 lane 的开关与参数：**
+>
+> | 变量 | 默认 | 作用 |
+> |---|---|---|
+> | `SCHEDULE_ENABLE_T30` | `false`（workflow 设为 `true`） | 开启 T-30 lane |
+> | `SCHEDULE_WINDOW_MINUTES` | `60` | T-60 lane 上界 |
+> | `SCHEDULE_T30_WINDOW_MINUTES` | `30` | T-30 lane 上界 |
+> | `ANALYSIS_DECISION_MINUTES` | `60` | T-60 分析时点 |
+> | `ANALYSIS_T30_MINUTES` | `30` | T-30 分析时点 |
+>
+> `data/scheduler_state.json` 记录 `analyzed`（T-60 已处理）、`t30_analyzed`（T-30 已处理）、`t60_actionable`（T-60 可下注，用于 T-30 优先判断）。调度器每次启动会从 `paper_tracking.csv` 最近 2 小时的记录恢复这三个集合，避免重启或跨午夜后重复分析/重复下注。
+>
+> `paper_tracking.csv` 和邮件正文新增 `口径` 列（`T-60` / `T-30`），用来区分两档注单。
+>
+> 两档依赖约 **30 分钟一次**的触发：T-60 在 30–60 分钟窗口内补跑，T-30 在 0–30 分钟窗口内补跑。如果 cron-job.org 延迟超过 30 分钟，可能漏掉某一档；某场进入 T-30 窗口时如果 T-60 还没跑过，就只做 T-30。
 >
 > workflow 需要 `permissions: contents: write`，每次运行把
 > `data/schedule_cache.json`、`data/scheduler_state.json`、
@@ -528,7 +556,7 @@ football-rule-engine/
     backtest.py   # Phase 2 回测 + 分桶统计
     walkforward.py # Phase 3 月度滚动样本外验证
     tracker.py    # 纸面跟踪 CSV（actionable 场次、result、CLV）
-    scheduler.py  # 赛程缓存 + 30 分钟轮询 + 11/16 点结算回填 + 邮件 + 提交结果
+    scheduler.py  # 赛程缓存 + 30 分钟轮询（T-60/T-30 两档）+ 11/16 点结算回填 + 邮件 + 提交结果
     settle.py     # 回填已结束场次的 result/profit/CLV，并同步 actionable JSON
     notify.py     # SMTP 邮件通知（仅本轮新增 actionable + 小 CSV）
     init_db.py    # 用 sql/schema.sql 初始化 MySQL
@@ -579,12 +607,12 @@ python -m unittest discover -s tests -v
 1. **没有基本面**：伤停、首发、战意、天气全部缺失，所以 Phase 1 的置信度硬封顶 55，且大量场次会输出“仅观察”。
 2. **规则是启发式**：T-01/T-03 等规则本身存在上下文依赖，Phase 1 用“观察 + 冲突提示”处理，而不是强行给方向。
 3. **sup 大多缺失**：当前库只覆盖部分联赛，理论盘口校验无法完成。
-4. **未回测**：Phase 1 是基线引擎；规则权重和阈值需要 Phase 2 用历史比分做走样本外回测后再校准。
+4. **已回测、未调参**：Phase 2 已用 2718 场历史比分回测；规则权重和阈值尚未按结果调整，当前只在实验 gate 使用“只做让球方 + conf≥50”。
 5. **不接受交易量**：只有价格，没有成交量；`价量局限` 始终存在。
 
-## 下一步（Phase 2）
+## 下一步
 
-- 用 `match_list_all` 的历史比分做回测
-- 按规则/联赛/盘口/置信度分桶统计命中率、ROI、CLV
-- 砍掉无效规则，校准阈值
-- 通过后再接 LLM：把 `analysis.json` 作为 evidence 输入，而不是直接给 LLM 结论
+- 纸面跟踪实验 gate（`--experimental-default`）1–2 个月
+- 做规则消融（逐条关闭规则重跑），而不是只看“规则出现注单”的共线性统计
+- 通过后再考虑把“只做让球方 + conf≥50”设为默认
+- 最后再接 LLM：把 `analysis.json` 作为 evidence 输入，而不是直接给 LLM 结论

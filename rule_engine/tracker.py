@@ -19,6 +19,7 @@ COLUMNS: list[tuple[str, str]] = [
     ("analysis_at", "分析时间"),
     ("fixture_id", "fixture_id"),
     ("kickoff", "开赛"),
+    ("stage", "口径"),
     ("league", "联赛"),
     ("home", "主队"),
     ("away", "客队"),
@@ -130,10 +131,15 @@ def result_to_tracker_row(result: AnalysisResult) -> dict:
         water = asian.get("home_latest_water")
     elif result.direction == "away":
         water = asian.get("away_latest_water")
+    delta_minutes = round(
+        (result.match.match_time - result.analysis_time).total_seconds() / 60
+    )
+    stage = f"T-{delta_minutes}" if delta_minutes > 0 else ""
     return {
         "analysis_at": result.analysis_time.strftime("%Y-%m-%d %H:%M:%S"),
         "fixture_id": result.match.fixture_id,
         "kickoff": result.match.match_time.strftime("%Y-%m-%d %H:%M"),
+        "stage": stage,
         "league": result.match.league or "",
         "home": result.match.home,
         "away": result.match.away,

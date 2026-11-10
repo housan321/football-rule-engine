@@ -1,5 +1,5 @@
 __pycache__/
 *.pyc
 .env
-out/*.html
-out/*.json
+/data/
+/out/
