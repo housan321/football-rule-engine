@@ -1,5 +1,5 @@
 {
-  "fetched_at": "2026-11-11T16:01:16",
+  "fetched_at": "2026-11-12T11:01:21",
   "matches": [
     {
       "fixture_id": 3011942,
@@ -18,6 +18,15 @@
       "away": "茨高 [秋15]",
       "kickoff": "2026-11-13T08:00:00",
       "schedule_page": "20261112"
+    },
+    {
+      "fixture_id": 3002100,
+      "league_id": 29,
+      "league": "苏超",
+      "home": "邓迪联",
+      "away": "哈茨",
+      "kickoff": "2026-11-13T23:00:00",
+      "schedule_page": "20261113"
     }
   ]
 }
