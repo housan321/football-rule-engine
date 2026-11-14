@@ -26,5 +26,33 @@
     "clv_favorable": "",
     "notes": "",
     "updated_at": ""
+  },
+  {
+    "analysis_at": "2026-11-14 12:00:00",
+    "fixture_id": 3000178,
+    "kickoff": "2026-11-14 13:00",
+    "stage": "T-60",
+    "league": "日职乙",
+    "home": "RB大宫松鼠",
+    "away": "山形山神",
+    "mode": "pre",
+    "direction": "home",
+    "direction_name": "RB大宫松鼠",
+    "side_line": -1.0,
+    "is_giving": "是",
+    "confidence": 50,
+    "confidence_label": "中低",
+    "experimental_default": "是",
+    "actionable": "是",
+    "stake": "小注",
+    "engine_line": -1.0,
+    "water": 0.835,
+    "result": "",
+    "profit": "",
+    "clv_line": "",
+    "clv_water": "",
+    "clv_favorable": "",
+    "notes": "",
+    "updated_at": ""
   }
 ]
