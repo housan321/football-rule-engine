@@ -54,5 +54,33 @@
     "clv_favorable": "",
     "notes": "",
     "updated_at": ""
+  },
+  {
+    "analysis_at": "2026-11-14 12:30:00",
+    "fixture_id": 3000177,
+    "kickoff": "2026-11-14 13:00",
+    "stage": "T-30",
+    "league": "日职乙",
+    "home": "大分三神",
+    "away": "枥木市FC",
+    "mode": "pre",
+    "direction": "home",
+    "direction_name": "大分三神",
+    "side_line": -0.5,
+    "is_giving": "是",
+    "confidence": 50,
+    "confidence_label": "中低",
+    "experimental_default": "是",
+    "actionable": "是",
+    "stake": "小注",
+    "engine_line": -0.5,
+    "water": 0.95,
+    "result": "",
+    "profit": "",
+    "clv_line": "",
+    "clv_water": "",
+    "clv_favorable": "",
+    "notes": "",
+    "updated_at": ""
   }
 ]
