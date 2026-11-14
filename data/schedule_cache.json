@@ -1,60 +1,6 @@
 {
-  "fetched_at": "2026-11-14T11:01:23",
+  "fetched_at": "2026-11-14T16:01:17",
   "matches": [
-    {
-      "fixture_id": 3011943,
-      "league_id": 250,
-      "league": "哥伦甲秋",
-      "home": "[秋13] 波哥大国际",
-      "away": "圣塔菲 [秋5]",
-      "kickoff": "2026-11-14T09:30:00",
-      "schedule_page": "20261113"
-    },
-    {
-      "fixture_id": 3000173,
-      "league_id": 284,
-      "league": "日职乙",
-      "home": "新潟天鹅",
-      "away": "宫崎棒牛鸟",
-      "kickoff": "2026-11-14T13:00:00",
-      "schedule_page": "20261114"
-    },
-    {
-      "fixture_id": 3000174,
-      "league_id": 284,
-      "league": "日职乙",
-      "home": "藤枝MYFC",
-      "away": "甲府风林",
-      "kickoff": "2026-11-14T13:00:00",
-      "schedule_page": "20261114"
-    },
-    {
-      "fixture_id": 3000177,
-      "league_id": 284,
-      "league": "日职乙",
-      "home": "大分三神",
-      "away": "枥木市FC",
-      "kickoff": "2026-11-14T13:00:00",
-      "schedule_page": "20261114"
-    },
-    {
-      "fixture_id": 3000178,
-      "league_id": 284,
-      "league": "日职乙",
-      "home": "RB大宫松鼠",
-      "away": "山形山神",
-      "kickoff": "2026-11-14T13:00:00",
-      "schedule_page": "20261114"
-    },
-    {
-      "fixture_id": 3000179,
-      "league_id": 284,
-      "league": "日职乙",
-      "home": "湘南海洋",
-      "away": "横滨FC",
-      "kickoff": "2026-11-14T13:00:00",
-      "schedule_page": "20261114"
-    },
     {
       "fixture_id": 3014174,
       "league_id": 33,
