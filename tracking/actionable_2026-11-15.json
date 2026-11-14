@@ -26,5 +26,33 @@
     "clv_favorable": "",
     "notes": "",
     "updated_at": ""
+  },
+  {
+    "analysis_at": "2026-11-15 03:30:00",
+    "fixture_id": 3011945,
+    "kickoff": "2026-11-15 04:30",
+    "stage": "T-60",
+    "league": "哥伦甲",
+    "home": "百万富翁",
+    "away": "阿利安萨",
+    "mode": "pre",
+    "direction": "home",
+    "direction_name": "百万富翁",
+    "side_line": -1.5,
+    "is_giving": "是",
+    "confidence": 50,
+    "confidence_label": "中低",
+    "experimental_default": "是",
+    "actionable": "是",
+    "stake": "小注",
+    "engine_line": -1.5,
+    "water": 0.825,
+    "result": "",
+    "profit": "",
+    "clv_line": "",
+    "clv_water": "",
+    "clv_favorable": "",
+    "notes": "",
+    "updated_at": ""
   }
 ]
