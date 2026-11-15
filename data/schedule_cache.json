@@ -1,51 +1,6 @@
 {
-  "fetched_at": "2026-11-15T11:01:21",
+  "fetched_at": "2026-11-15T16:01:21",
   "matches": [
-    {
-      "fixture_id": 3000175,
-      "league_id": 284,
-      "league": "日职乙",
-      "home": "札幌冈萨多",
-      "away": "鸟栖沙岩",
-      "kickoff": "2026-11-15T12:00:00",
-      "schedule_page": "20261115"
-    },
-    {
-      "fixture_id": 3000181,
-      "league_id": 284,
-      "league": "日职乙",
-      "home": "八户云罗里",
-      "away": "磐城FC",
-      "kickoff": "2026-11-15T12:00:00",
-      "schedule_page": "20261115"
-    },
-    {
-      "fixture_id": 3000182,
-      "league_id": 284,
-      "league": "日职乙",
-      "home": "仙台维加泰",
-      "away": "秋田蓝色闪电",
-      "kickoff": "2026-11-15T12:00:00",
-      "schedule_page": "20261115"
-    },
-    {
-      "fixture_id": 3000176,
-      "league_id": 284,
-      "league": "日职乙",
-      "home": "今治",
-      "away": "磐田喜悦",
-      "kickoff": "2026-11-15T13:00:00",
-      "schedule_page": "20261115"
-    },
-    {
-      "fixture_id": 3000180,
-      "league_id": 284,
-      "league": "日职乙",
-      "home": "富山胜利",
-      "away": "德岛漩涡",
-      "kickoff": "2026-11-15T13:00:00",
-      "schedule_page": "20261115"
-    },
     {
       "fixture_id": 3014173,
       "league_id": 33,
@@ -90,6 +45,15 @@
       "away": "萨瓦德尔",
       "kickoff": "2026-11-16T01:30:00",
       "schedule_page": "20261115"
+    },
+    {
+      "fixture_id": 3014165,
+      "league_id": 33,
+      "league": "西乙",
+      "home": "阿尔巴塞特",
+      "away": "塞尔塔B队",
+      "kickoff": "2026-11-17T03:30:00",
+      "schedule_page": "20261116"
     }
   ]
 }
