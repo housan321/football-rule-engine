@@ -103,12 +103,12 @@
     "stake": "小注",
     "engine_line": 0.25,
     "water": 0.875,
-    "result": "",
-    "profit": "",
-    "clv_line": "",
-    "clv_water": "",
-    "clv_favorable": "",
+    "result": "win",
+    "profit": 0.875,
+    "clv_line": 0.0,
+    "clv_water": 0.03,
+    "clv_favorable": "是",
     "notes": "",
-    "updated_at": ""
+    "updated_at": "2026-11-15 11:01:44"
   }
 ]

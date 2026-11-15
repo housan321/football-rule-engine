@@ -19,13 +19,13 @@
     "stake": "小注",
     "engine_line": -1.0,
     "water": 0.91,
-    "result": "",
-    "profit": "",
-    "clv_line": "",
-    "clv_water": "",
-    "clv_favorable": "",
+    "result": "loss",
+    "profit": -1.0,
+    "clv_line": 0.0,
+    "clv_water": 0.095,
+    "clv_favorable": "是",
     "notes": "",
-    "updated_at": ""
+    "updated_at": "2026-11-15 11:01:44"
   },
   {
     "analysis_at": "2026-11-15 03:30:00",
@@ -47,12 +47,12 @@
     "stake": "小注",
     "engine_line": -1.5,
     "water": 0.825,
-    "result": "",
-    "profit": "",
-    "clv_line": "",
-    "clv_water": "",
-    "clv_favorable": "",
+    "result": "win",
+    "profit": 0.825,
+    "clv_line": 0.5,
+    "clv_water": -0.105,
+    "clv_favorable": "是",
     "notes": "",
-    "updated_at": ""
+    "updated_at": "2026-11-15 11:01:44"
   }
 ]
