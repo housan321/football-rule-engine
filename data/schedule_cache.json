@@ -1,51 +1,6 @@
 {
-  "fetched_at": "2026-11-15T16:01:21",
+  "fetched_at": "2026-11-16T11:01:18",
   "matches": [
-    {
-      "fixture_id": 3014173,
-      "league_id": 33,
-      "league": "西乙",
-      "home": "特内里费",
-      "away": "休达",
-      "kickoff": "2026-11-15T21:00:00",
-      "schedule_page": "20261115"
-    },
-    {
-      "fixture_id": 2996551,
-      "league_id": 17,
-      "league": "荷乙",
-      "home": "马斯特里赫特",
-      "away": "维特斯",
-      "kickoff": "2026-11-15T21:30:00",
-      "schedule_page": "20261115"
-    },
-    {
-      "fixture_id": 3014168,
-      "league_id": 33,
-      "league": "西乙",
-      "home": "格拉纳达",
-      "away": "拉斯帕尔马斯",
-      "kickoff": "2026-11-15T23:15:00",
-      "schedule_page": "20261115"
-    },
-    {
-      "fixture_id": 3014166,
-      "league_id": 33,
-      "league": "西乙",
-      "home": "埃瓦尔",
-      "away": "加的斯",
-      "kickoff": "2026-11-16T01:30:00",
-      "schedule_page": "20261115"
-    },
-    {
-      "fixture_id": 3014167,
-      "league_id": 33,
-      "league": "西乙",
-      "home": "埃登斯",
-      "away": "萨瓦德尔",
-      "kickoff": "2026-11-16T01:30:00",
-      "schedule_page": "20261115"
-    },
     {
       "fixture_id": 3014165,
       "league_id": 33,
