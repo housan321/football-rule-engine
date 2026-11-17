@@ -1,14 +1,4 @@
 {
-  "fetched_at": "2026-11-16T16:01:16",
-  "matches": [
-    {
-      "fixture_id": 3014165,
-      "league_id": 33,
-      "league": "西乙",
-      "home": "阿尔巴塞特",
-      "away": "塞尔塔B队",
-      "kickoff": "2026-11-17T03:30:00",
-      "schedule_page": "20261116"
-    }
-  ]
+  "fetched_at": "2026-11-17T11:01:19",
+  "matches": []
 }
