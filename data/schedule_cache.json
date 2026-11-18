@@ -1,5 +1,5 @@
 {
-  "fetched_at": "2026-11-18T11:01:14",
+  "fetched_at": "2026-11-18T16:01:09",
   "matches": [
     {
       "fixture_id": 2910968,
@@ -98,6 +98,24 @@
       "home": "艾因",
       "away": "迪哈夫拉",
       "kickoff": "2026-11-19T23:25:00",
+      "schedule_page": "20261119"
+    },
+    {
+      "fixture_id": 2910975,
+      "league_id": 4,
+      "league": "巴西甲",
+      "home": "瓦斯科达伽马",
+      "away": "巴西国际",
+      "kickoff": "2026-11-20T06:30:00",
+      "schedule_page": "20261119"
+    },
+    {
+      "fixture_id": 2910976,
+      "league_id": 4,
+      "league": "巴西甲",
+      "home": "维多利亚",
+      "away": "布拉干蒂诺RB",
+      "kickoff": "2026-11-20T06:30:00",
       "schedule_page": "20261119"
     }
   ]
