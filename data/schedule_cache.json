@@ -1,5 +1,5 @@
 {
-  "fetched_at": "2026-11-17T16:01:08",
+  "fetched_at": "2026-11-18T11:01:14",
   "matches": [
     {
       "fixture_id": 2910968,
@@ -36,6 +36,69 @@
       "away": "巴拉纳竞技",
       "kickoff": "2026-11-19T07:30:00",
       "schedule_page": "20261118"
+    },
+    {
+      "fixture_id": 2910967,
+      "league_id": 4,
+      "league": "巴西甲",
+      "home": "科林蒂安",
+      "away": "博塔弗戈",
+      "kickoff": "2026-11-19T08:30:00",
+      "schedule_page": "20261118"
+    },
+    {
+      "fixture_id": 2910971,
+      "league_id": 4,
+      "league": "巴西甲",
+      "home": "格雷米奥",
+      "away": "巴伊亚",
+      "kickoff": "2026-11-19T08:30:00",
+      "schedule_page": "20261118"
+    },
+    {
+      "fixture_id": 3101713,
+      "league_id": 301,
+      "league": "阿联酋超",
+      "home": "迪拜祈祷",
+      "away": "哈塔",
+      "kickoff": "2026-11-19T20:45:00",
+      "schedule_page": "20261119"
+    },
+    {
+      "fixture_id": 3112666,
+      "league_id": 279,
+      "league": "伊朗超",
+      "home": "霍拉马巴德",
+      "away": "德黑兰独立",
+      "kickoff": "2026-11-19T21:00:00",
+      "schedule_page": "20261119"
+    },
+    {
+      "fixture_id": 3112667,
+      "league_id": 279,
+      "league": "伊朗超",
+      "home": "马拉云",
+      "away": "高尔高赫",
+      "kickoff": "2026-11-19T21:00:00",
+      "schedule_page": "20261119"
+    },
+    {
+      "fixture_id": 3112668,
+      "league_id": 279,
+      "league": "伊朗超",
+      "home": "沙赫尔巴巴克",
+      "away": "大不里士拖拉机",
+      "kickoff": "2026-11-19T21:45:00",
+      "schedule_page": "20261119"
+    },
+    {
+      "fixture_id": 3101714,
+      "league_id": 301,
+      "league": "阿联酋超",
+      "home": "艾因",
+      "away": "迪哈夫拉",
+      "kickoff": "2026-11-19T23:25:00",
+      "schedule_page": "20261119"
     }
   ]
 }
