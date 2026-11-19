@@ -1,5 +1,5 @@
 {
-  "fetched_at": "2026-11-19T11:01:11",
+  "fetched_at": "2026-11-19T16:01:12",
   "matches": [
     {
       "fixture_id": 3101713,
@@ -263,69 +263,6 @@
       "schedule_page": "20261120"
     },
     {
-      "fixture_id": 3047049,
-      "league_id": 292,
-      "league": "沙特联",
-      "home": "费哈",
-      "away": "哈萨征服",
-      "kickoff": "2026-11-21T01:00:00",
-      "schedule_page": "20261120"
-    },
-    {
-      "fixture_id": 3047050,
-      "league_id": 292,
-      "league": "沙特联",
-      "home": "利雅得新月",
-      "away": "迪雷禾",
-      "kickoff": "2026-11-21T01:00:00",
-      "schedule_page": "20261120"
-    },
-    {
-      "fixture_id": 3047051,
-      "league_id": 292,
-      "league": "沙特联",
-      "home": "塞哈特海湾",
-      "away": "吉达联合",
-      "kickoff": "2026-11-21T01:00:00",
-      "schedule_page": "20261120"
-    },
-    {
-      "fixture_id": 3047053,
-      "league_id": 292,
-      "league": "沙特联",
-      "home": "利雅得体育",
-      "away": "哈森姆",
-      "kickoff": "2026-11-21T01:00:00",
-      "schedule_page": "20261120"
-    },
-    {
-      "fixture_id": 3047054,
-      "league_id": 292,
-      "league": "沙特联",
-      "home": "利雅得青年人",
-      "away": "达曼协作",
-      "kickoff": "2026-11-21T01:00:00",
-      "schedule_page": "20261120"
-    },
-    {
-      "fixture_id": 3047055,
-      "league_id": 292,
-      "league": "沙特联",
-      "home": "布赖代合作",
-      "away": "艾卜哈",
-      "kickoff": "2026-11-21T01:00:00",
-      "schedule_page": "20261120"
-    },
-    {
-      "fixture_id": 3047056,
-      "league_id": 292,
-      "league": "沙特联",
-      "home": "新未来城体育",
-      "away": "拉斯永恒",
-      "kickoff": "2026-11-21T01:00:00",
-      "schedule_page": "20261120"
-    },
-    {
       "fixture_id": 3003208,
       "league_id": 6,
       "league": "波兰超",
@@ -512,6 +449,96 @@
       "home": "维特斯",
       "away": "阿尔克马尔青年队",
       "kickoff": "2026-11-21T03:00:00",
+      "schedule_page": "20261120"
+    },
+    {
+      "fixture_id": 3018869,
+      "league_id": 8,
+      "league": "德甲",
+      "home": "拜仁慕尼黑",
+      "away": "科隆",
+      "kickoff": "2026-11-21T03:30:00",
+      "schedule_page": "20261120"
+    },
+    {
+      "fixture_id": 3040824,
+      "league_id": 40,
+      "league": "意乙",
+      "home": "维罗纳",
+      "away": "切塞纳",
+      "kickoff": "2026-11-21T03:30:00",
+      "schedule_page": "20261120"
+    },
+    {
+      "fixture_id": 3014186,
+      "league_id": 33,
+      "league": "西乙",
+      "home": "安道尔FC",
+      "away": "莱加内斯",
+      "kickoff": "2026-11-21T03:30:00",
+      "schedule_page": "20261120"
+    },
+    {
+      "fixture_id": 3003209,
+      "league_id": 6,
+      "league": "波兰超",
+      "home": "什切青",
+      "away": "史拉斯科",
+      "kickoff": "2026-11-21T03:30:00",
+      "schedule_page": "20261120"
+    },
+    {
+      "fixture_id": 2995406,
+      "league_id": 11,
+      "league": "法甲",
+      "home": "特鲁瓦",
+      "away": "勒阿弗尔",
+      "kickoff": "2026-11-21T03:45:00",
+      "schedule_page": "20261120"
+    },
+    {
+      "fixture_id": 3003620,
+      "league_id": 5,
+      "league": "比甲",
+      "home": "色格拉布鲁日",
+      "away": "韦斯特洛",
+      "kickoff": "2026-11-21T03:45:00",
+      "schedule_page": "20261120"
+    },
+    {
+      "fixture_id": 3013763,
+      "league_id": 31,
+      "league": "西甲",
+      "home": "毕尔巴鄂竞技",
+      "away": "西班牙人",
+      "kickoff": "2026-11-21T04:00:00",
+      "schedule_page": "20261120"
+    },
+    {
+      "fixture_id": 3114312,
+      "league_id": 250,
+      "league": "哥伦甲附",
+      "home": "[秋6] 麦德林独立",
+      "away": "圣塔菲 [秋5]",
+      "kickoff": "2026-11-21T05:30:00",
+      "schedule_page": "20261120"
+    },
+    {
+      "fixture_id": 3111912,
+      "league_id": 2,
+      "league": "阿甲",
+      "home": "萨斯菲尔德",
+      "away": "贝尔格拉诺",
+      "kickoff": "2026-11-21T07:00:00",
+      "schedule_page": "20261120"
+    },
+    {
+      "fixture_id": 3114310,
+      "league_id": 250,
+      "league": "哥伦甲附",
+      "home": "[秋4] 布卡拉曼加竞技",
+      "away": "卡利美洲 [秋2]",
+      "kickoff": "2026-11-21T07:35:00",
       "schedule_page": "20261120"
     }
   ]
