@@ -256,6 +256,30 @@ CLV 使用开赛前最后一份共识快照（`kickoff - 1s`）。
 }
 ```
 
+### 刷新 `schedule_cache.json`
+
+调度器只在缓存“过期”时自动刷新：仅当 `fetched_at` 早于当天最近一次 11:00 / 16:00（北京时间）才会重新抓取 D-1 / D / D+1 赛程（`scheduler.py` 的 `load_or_refresh_schedule`）。手动刷新有两种方式：
+
+**只抓赛程（不分析、不结算、不发邮件）：**
+
+```bash
+python -c "from rule_engine.scheduler import collect_schedule, now_local; collect_schedule(now_local())"
+```
+
+会重写 `data/schedule_cache.json`，不影响 `data/scheduler_state.json`；本机需要 OpenSSL 1.1.1（见「导入数据」一节的说明）。
+
+**让 scheduler 走完整刷新流程：**
+
+```bash
+# 把 fetched_at 改旧（或备份后删除缓存文件），下一次运行就会重新抓取
+python -c "import json; p='data/schedule_cache.json'; d=json.load(open(p,encoding='utf-8')); d['fetched_at']='2000-01-01T00:00:00'; json.dump(d,open(p,'w',encoding='utf-8'),ensure_ascii=False,indent=2)"
+python -m rule_engine.scheduler
+```
+
+这样会先刷新赛程、结算已结束注单，再处理本轮 due 场次（可能写 tracker、发邮件）。抓取失败时 `collect_schedule` 在写文件前就会抛异常，旧缓存保持不变。
+
+GitHub Actions 没有单独的手动刷新入口：要么在本地刷新后提交 `data/schedule_cache.json`，要么把 `fetched_at` 改旧并提交，再触发 `workflow_dispatch`（缓存过期时 scheduler 会自己刷新）。
+
 ## 导入数据
 
 ```bash
