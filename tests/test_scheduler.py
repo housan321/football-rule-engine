@@ -86,6 +86,35 @@ class SchedulerTests(unittest.TestCase):
         self.assertIn(2, state["done"]["conflict_t120"])
         self.assertNotIn(3, state["done"]["conflict_t10"])
 
+    def test_load_state_drops_legacy_keys_and_unknown_strategies(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "scheduler_state.json"
+            path.write_text(
+                json.dumps(
+                    {
+                        "date": "2026-11-20",
+                        "analyzed": [1],
+                        "t30_analyzed": [2],
+                        "t60_actionable": [3],
+                        "done": {
+                            "conflict_t10": [10, 10],
+                            "water_t60": ["20"],
+                            "removed_t30": [30],
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            with patch.object(scheduler, "STATE_PATH", path), patch.object(
+                scheduler, "TRACKER_PATH", Path(tmp) / "missing.csv"
+            ):
+                state = scheduler.load_state(datetime(2026, 11, 20, 12, 0))
+        self.assertEqual(set(state), {"date", "done"})
+        self.assertEqual(set(state["done"]), set(scheduler.STRATEGIES))
+        self.assertEqual(state["done"]["conflict_t10"], [10])
+        self.assertEqual(state["done"]["water_t60"], [20])
+        self.assertNotIn("removed_t30", state["done"])
+
     def test_run_once_marks_coverage_and_saves(self):
         now = datetime(2026, 11, 8, 11, 50)
         matches = [

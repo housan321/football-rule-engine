@@ -600,7 +600,7 @@ python -m rule_engine track-update --excel tracking/paper_tracking.csv
 
 工作流：`.github/workflows/scan.yml`
 
-- 定时由 **cron-job.org** 通过 GitHub `workflow_dispatch` API 触发，每 30 分钟一次
+- 定时由 **cron-job.org** 通过 GitHub `workflow_dispatch` API 触发，每 10 分钟一次
 - 每次 job 内启动临时 **MySQL 8 service container**
 - `python -m rule_engine.init_db` 初始化 `sql/schema.sql`
 - 执行：
@@ -612,32 +612,31 @@ python -m rule_engine track-update --excel tracking/paper_tracking.csv
 
 1. 读 `data/schedule_cache.json`（含 `league` 联赛名、`home` 主队、`away` 客队）；
 2. 每天 11:00 / 16:00（北京时间）之后第一次运行刷新缓存，爬 D-1 / D / D+1 赛程页；
-3. 刷新成功后顺带结算已结束场次，回填 `result` / `profit` / CLV 到 `paper_tracking.csv`，并同步 `actionable_*.json`；
-4. 按开赛时间分两条 lane：
-   - T-60 lane：距开赛 30–60 分钟，按 `kickoff - 60` 分析；
-   - T-30 lane：距开赛 0–30 分钟，按 `kickoff - 30` 分析；
-5. 只导入本轮 due 场次的赔率，统一按只做让球方 + conf≥50 分析；
-   - **T-60 优先**：同一场如果 T-60 已 actionable，跳过它的 T-30；T-60 没下注时才允许 T-30；
-6. 赔率不足的场次跳过；
-7. 有 `actionable=是` 时写 CSV、`tracking/actionable_YYYY-MM-DD.json`，邮件只发本轮新增 actionable；
-8. 更新 `data/scheduler_state.json` 去重；
+3. 刷新成功后顺带结算已结束场次，回填 `result` / `profit` / CLV 到 `paper_tracking.csv`；
+4. 三条预注册策略（`rule_engine/rules.py` 的 `STRATEGIES`）：
+   - `conflict_t120`：距开赛 105–120 分钟（盘口与水位方向冲突）；
+   - `water_t60`：距开赛 45–60 分钟（水位单边移动）；
+   - `conflict_t10`：距开赛 0–10 分钟（收盘前冲突）；
+   - 窗口下界 = 决策时点 − `SCHEDULE_GRACE_MINUTES`（默认 15），只在窗口内补跑，不会提前；
+5. 只导入本轮 due 场次的赔率，按 `SCHEDULE_MIN_ASIAN`（默认 2）家公司覆盖率与 `SCHEDULE_PRICE`（默认 `consensus`）分析；
+6. 数据覆盖不足、抓取失败或分析异常的场次不记为已处理，下一轮继续重试，直到窗口关闭；
+7. 有 `actionable=是` 时写 `tracking/paper_tracking.csv`，邮件只发本轮新增 actionable（附件只含本轮注单）；
+8. 更新 `data/scheduler_state.json` 去重：只保留 `date` + `done`（按策略记录当天已成功分析的 fixture_id，无论是否触发），日期翻转后重置；启动时从 `paper_tracking.csv` 最近 2 小时已触发注单恢复 `done`，避免重启/跨午夜后重复分析或重复下注；
 9. 把 `data/` 与 `tracking/` 的结果提交回仓库（需要 `contents: write`）。
 
 > `data/` 只存调度缓存/状态两个小 JSON；`out/` 和 `data/*.js` 在 Actions 里不生成。
 >
-> **T-60/T-30 参数（workflow 已设置）：**
+> **调度参数：**
 >
 > | 变量 | 默认 | 作用 |
 > |---|---|---|
-> | `SCHEDULE_ENABLE_T30` | `false`（workflow=`true`） | 开启 T-30 lane |
-> | `SCHEDULE_WINDOW_MINUTES` | `60` | T-60 lane 上界 |
-> | `SCHEDULE_T30_WINDOW_MINUTES` | `30` | T-30 lane 上界 |
-> | `ANALYSIS_DECISION_MINUTES` | `60` | T-60 分析时点 |
-> | `ANALYSIS_T30_MINUTES` | `30` | T-30 分析时点 |
+> | `SCHEDULE_MIN_ASIAN` | `2` | 最少亚盘公司数，覆盖不足则跳过 |
+> | `SCHEDULE_PRICE` | `consensus` | 价格口径：`consensus` / `best` |
+> | `SCHEDULE_GRACE_MINUTES` | `15` | 决策窗口允许的补跑延迟 |
 >
-> `data/scheduler_state.json` 记录 `analyzed`（T-60 已处理）、`t30_analyzed`（T-30 已处理）、`t60_actionable`（T-60 可下注）。启动时从 `paper_tracking.csv` 最近 2 小时记录恢复这三个集合，避免重启/跨午夜后重复分析或重复下注。`paper_tracking.csv` 和邮件正文新增 `口径` 列。
+> `data/scheduler_state.json` 只记录 `date` 和 `done`；旧版的 `analyzed` / `t30_analyzed` / `t60_actionable` 已移除。
 >
-> 两档依赖约 30 分钟一次的触发：T-60 在 30–60 分钟窗口内补跑，T-30 在 0–30 分钟窗口内补跑；延迟超过 30 分钟可能漏档，进入 T-30 窗口时若 T-60 未跑过就只做 T-30。
+> 三条策略依赖约 10 分钟一次的触发；延迟超过 `SCHEDULE_GRACE_MINUTES` 会漏掉该决策点。
 
 需要配置的 GitHub Secrets：
 

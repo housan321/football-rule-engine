@@ -221,19 +221,21 @@ def _seed_recent_tracker_state(state: dict, now: datetime) -> None:
 
 def load_state(now: datetime) -> dict:
     today = now.strftime("%Y-%m-%d")
-    state: dict = {"date": today, "done": {}}
+    loaded_done: dict = {}
     if STATE_PATH.exists():
         try:
             loaded = json.loads(STATE_PATH.read_text(encoding="utf-8"))
         except Exception:
             loaded = {}
-        if loaded.get("date") == today:
-            state = loaded
-    if not isinstance(state.get("done"), dict):
-        state["done"] = {}
+        if loaded.get("date") == today and isinstance(loaded.get("done"), dict):
+            loaded_done = loaded["done"]
+    # Rebuild from scratch instead of reusing the loaded dict: this drops
+    # legacy keys (analyzed / t30_analyzed / t60_actionable) and strategies
+    # that no longer exist.
+    state: dict = {"date": today, "done": {}}
     for spec in STRATEGIES.values():
         state["done"][spec.key] = sorted(
-            set(int(v) for v in state["done"].get(spec.key, []))
+            set(int(v) for v in loaded_done.get(spec.key, []))
         )
     _seed_recent_tracker_state(state, now)
     return state
