@@ -1,5 +1,5 @@
 {
-  "fetched_at": "2026-11-20T15:15:48",
+  "fetched_at": "2026-11-20T17:31:12",
   "matches": [
     {
       "fixture_id": 3062903,
@@ -1871,6 +1871,33 @@
       "home": "[秋6] 桑托斯拉古纳",
       "away": "莱昂 [秋8]",
       "kickoff": "2026-11-22T07:00:00",
+      "schedule_page": "20261121"
+    },
+    {
+      "fixture_id": 2910982,
+      "league_id": 4,
+      "league": "巴西甲",
+      "home": "沙佩科恩斯",
+      "away": "克鲁塞罗",
+      "kickoff": "2026-11-22T08:00:00",
+      "schedule_page": "20261121"
+    },
+    {
+      "fixture_id": 2997488,
+      "league_id": 140,
+      "league": "墨西联秋",
+      "home": "[秋11] 美洲狮",
+      "away": "蒙特雷 [秋7]",
+      "kickoff": "2026-11-22T09:00:00",
+      "schedule_page": "20261121"
+    },
+    {
+      "fixture_id": 3114313,
+      "league_id": 250,
+      "league": "哥伦甲附",
+      "home": "[秋8] 云斯卡尔达斯",
+      "away": "国民竞技 [秋1]",
+      "kickoff": "2026-11-22T09:15:00",
       "schedule_page": "20261121"
     }
   ]
