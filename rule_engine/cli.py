@@ -202,6 +202,7 @@ def _collect_results(
                     if html_path:
                         print(f"    html: {html_path}")
                         print(f"    json: {json_path}")
+                        print("#" * 80)
         except InsufficientOdds as exc:
             skipped += 1
             print(f"[skip] {exc}", file=sys.stderr)
