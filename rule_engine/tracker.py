@@ -3,12 +3,12 @@ from __future__ import annotations
 import csv
 import io
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from .db import fetch_asian, fetch_match
 from .engine import AnalysisResult
-from .features import build_asian_features, build_company_views
+from .features import build_consensus_snapshot
 from .settlement import settle_asian
 
 DEFAULT_TRACKER_PATH = "tracking/paper_tracking.csv"
@@ -125,25 +125,15 @@ def read_tracker_rows(path: str | Path) -> list[dict]:
 
 
 def result_to_tracker_row(result: AnalysisResult) -> dict:
-    asian = result.features.get("asian", {})
-    water = None
-    if result.direction == "home":
-        water = asian.get("home_latest_water")
-    elif result.direction == "away":
-        water = asian.get("away_latest_water")
-    delta_minutes = round(
-        (result.match.match_time - result.analysis_time).total_seconds() / 60
-    )
-    stage = f"T-{delta_minutes}" if delta_minutes > 0 else ""
     return {
         "analysis_at": result.analysis_time.strftime("%Y-%m-%d %H:%M:%S"),
         "fixture_id": result.match.fixture_id,
         "kickoff": result.match.match_time.strftime("%Y-%m-%d %H:%M"),
-        "stage": stage,
+        "stage": f"T-{result.decision_minutes}",
         "league": result.match.league or "",
         "home": result.match.home,
         "away": result.match.away,
-        "mode": result.mode,
+        "mode": result.strategy_label,
         "direction": result.direction,
         "direction_name": result.direction_name,
         "side_line": result.side_line,
@@ -153,14 +143,14 @@ def result_to_tracker_row(result: AnalysisResult) -> dict:
         "experimental_default": "是" if result.experimental_default else "否",
         "actionable": "是" if result.actionable else "否",
         "stake": result.stake,
-        "engine_line": asian.get("latest_line"),
-        "water": water,
+        "engine_line": result.line,
+        "water": result.water,
         "result": "",
         "profit": "",
         "clv_line": "",
         "clv_water": "",
         "clv_favorable": "",
-        "notes": "；".join(result.filter_notes),
+        "notes": result.reason,
         "updated_at": "",
     }
 
@@ -179,20 +169,25 @@ def append_rows(path: str | Path, rows: list[dict]) -> tuple[int, int]:
     out = Path(path)
     existing_rows = _read_rows(out) if out.exists() else []
 
-    index: dict[tuple[str, int], int] = {}
+    index: dict[tuple[str, int, str], int] = {}
     for row_idx, row in enumerate(existing_rows):
         at = str(row.get("analysis_at", "")).strip()
         fid = str(row.get("fixture_id", "")).strip()
+        mode = str(row.get("mode", "")).strip()
         if at and fid:
             try:
-                index[(at, int(fid))] = row_idx
+                index[(at, int(fid), mode)] = row_idx
             except ValueError:
                 continue
 
     added = 0
     updated = 0
     for row in rows:
-        key = (str(row["analysis_at"]), int(row["fixture_id"]))
+        key = (
+            str(row["analysis_at"]),
+            int(row["fixture_id"]),
+            str(row.get("mode", "")),
+        )
         if key in index:
             target = existing_rows[index[key]]
             for field in FIELD_NAMES:
@@ -212,22 +207,17 @@ def append_rows(path: str | Path, rows: list[dict]) -> tuple[int, int]:
 
 
 def _closing_quote(conn, match, direction: str):
-    series = fetch_asian(conn, match.fixture_id, "pre", match.match_time)
+    """Closing consensus just before kickoff, from the bettor's perspective."""
+    cutoff = match.match_time - timedelta(seconds=1)
+    series = fetch_asian(conn, match.fixture_id, cutoff)
     if not series:
         return None, None
-    views = build_company_views(series, match.match_time)
-    features = build_asian_features(views, "pre", match.match_time)
-    if features.latest_line is None:
+    snapshot = build_consensus_snapshot(series, cutoff)
+    if snapshot is None or not snapshot.valid:
         return None, None
-    close_line = (
-        features.latest_line if direction == "home" else -features.latest_line
-    )
-    close_water = (
-        features.home_latest_water
-        if direction == "home"
-        else features.away_latest_water
-    )
-    return close_line, close_water
+    if direction == "home":
+        return snapshot.line, snapshot.home_water
+    return -snapshot.line, snapshot.away_water
 
 
 def update_tracking_results(conn, path: str | Path) -> tuple[int, int, int]:

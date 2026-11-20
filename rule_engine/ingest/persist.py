@@ -15,7 +15,7 @@ Modes:
 Rows written to odds_live_all:
   - main line only (line_no=0)
   - pre-match only (phase=prematch)
-  - default company whitelist: 2,3,7,9,11,22
+  - default company whitelist: 2,3,6,7,10,13,22,23
 
 Rows written to odds_live_all_raw:
   - every line (main / 盘2 / 盘3 / ...)
@@ -35,9 +35,10 @@ from pathlib import Path
 from .parser import TITAN_NAME, TITAN_TO_SKILL, parse_html  # noqa: E402
 
 # Asian-handicap companies kept in odds_live_all / odds_live_all_raw.
-# Union of SKILL.md's Asian dictionary (2,3,7,9,22) and data_sources.md's
-# core+auxiliary anchor (2,3,7,11,22); 11 = 韦德/Betway.
-REQUIRED_COMPANIES = (2, 3, 7, 9, 11, 22)
+# The eight companies used by 《规则回测分析结果.docx》:
+# Bet365(2), 皇冠(3), 明陞(6), 澳门(7), 易胜博(10), Interwetten(13),
+# 平博(22), 香港马会(23).
+REQUIRED_COMPANIES = (2, 3, 6, 7, 10, 13, 22, 23)
 
 
 def load_dotenv(path=".env"):
@@ -408,7 +409,7 @@ def main():
     parser.add_argument(
         "--companies",
         default=",".join(str(c) for c in REQUIRED_COMPANIES),
-        help="comma-separated company ids, or 'all' (default: 2,3,7,9,11,22)",
+        help="comma-separated company ids, or 'all' (default: 2,3,6,7,10,13,22,23)",
     )
     args = parser.parse_args()
     companies = parse_companies(args.companies)

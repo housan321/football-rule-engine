@@ -102,26 +102,24 @@ def format_actionable_body(results: list[AnalysisResult]) -> str:
     lines = [
         f"可下注场次：{len(rows)}",
         "",
-        "fixture   口径   联赛        开赛              对阵                                方向             side_line  置信度  操作",
-        "--------  ------  ----------  ----------------  ----------------------------------  --------------  ---------  ------  ----",
+        "fixture   策略              决策时点  联赛        开赛              对阵                                方向             side_line  水位   操作",
+        "--------  ----------------  --------  ----------  ----------------  ----------------------------------  --------------  ---------  -----  ----",
     ]
     for r in rows:
         match = r.match
         side = f"{r.side_line:+.2f}" if r.side_line is not None else "-"
-        delta = round(
-            (match.match_time - r.analysis_time).total_seconds() / 60
-        )
-        stage = f"T-{delta}" if delta > 0 else "-"
+        water = f"{r.water:.3f}" if r.water is not None else "-"
         lines.append(
-            f"{match.fixture_id:<8}  {stage:<6}  {(match.league or '-'):<10}  "
+            f"{match.fixture_id:<8}  {r.strategy_label:<16}  "
+            f"T-{r.decision_minutes:<7}  {(match.league or '-'):<10}  "
             f"{match.match_time.strftime('%Y-%m-%d %H:%M'):<16}  "
             f"{(match.home + ' vs ' + match.away):<34}  "
-            f"{r.direction_name:<14}  {side:<9}  {r.confidence:<6}  {r.stake}"
+            f"{r.direction_name:<14}  {side:<9}  {water:<5}  {r.stake}"
         )
     lines += [
         "",
-        "说明：side_line 为下注方视角，负数=让球方；仅记录 actionable=是 的场次。",
-        "数据来源：亚盘 odds_live_all_raw + 欧赔 odds_history_eu；非投注建议。",
+        "说明：side_line 为下注方视角，负数=让球方；只记录触发的场次。",
+        "规则：conflict T-10m / conflict T-120m / water T-60m；数据来源亚盘 odds_live_all；非投注建议。",
     ]
     return "\n".join(lines)
 

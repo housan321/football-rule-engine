@@ -1,15 +1,6 @@
 {
-  "fetched_at": "2026-11-20T11:01:12",
+  "fetched_at": "2026-11-20T15:15:48",
   "matches": [
-    {
-      "fixture_id": 3111661,
-      "league_id": 21,
-      "league": "美职业",
-      "home": "[西8] 西雅图海湾人",
-      "away": "皇家盐湖城 [西9]",
-      "kickoff": "2026-11-20T11:00:00",
-      "schedule_page": "20261120"
-    },
     {
       "fixture_id": 3062903,
       "league_id": 1122,
@@ -623,20 +614,20 @@
       "schedule_page": "20261121"
     },
     {
-      "fixture_id": 3107509,
-      "league_id": 15,
-      "league": "韩K联降",
-      "home": "浦项制铁",
-      "away": "FC安养",
-      "kickoff": "2026-11-21T13:00:00",
-      "schedule_page": "20261121"
-    },
-    {
       "fixture_id": 3107494,
       "league_id": 15,
       "league": "韩K联冠",
       "home": "全北现代",
       "away": "FC首尔",
+      "kickoff": "2026-11-21T13:00:00",
+      "schedule_page": "20261121"
+    },
+    {
+      "fixture_id": 3107509,
+      "league_id": 15,
+      "league": "韩K联降",
+      "home": "浦项制铁",
+      "away": "FC安养",
       "kickoff": "2026-11-21T13:00:00",
       "schedule_page": "20261121"
     },
@@ -952,15 +943,6 @@
       "league": "法乙",
       "home": "拉瓦勒",
       "away": "蒙彼利埃",
-      "kickoff": "2026-11-21T21:00:00",
-      "schedule_page": "20261121"
-    },
-    {
-      "fixture_id": 2997785,
-      "league_id": 12,
-      "league": "法乙",
-      "home": "南特",
-      "away": "格勒诺布尔",
       "kickoff": "2026-11-21T21:00:00",
       "schedule_page": "20261121"
     },
@@ -1691,6 +1673,204 @@
       "home": "兰斯",
       "away": "圣埃蒂安",
       "kickoff": "2026-11-22T03:00:00",
+      "schedule_page": "20261121"
+    },
+    {
+      "fixture_id": 3003210,
+      "league_id": 6,
+      "league": "波兰超",
+      "home": "拉多麦科",
+      "away": "克拉科夫",
+      "kickoff": "2026-11-22T03:15:00",
+      "schedule_page": "20261121"
+    },
+    {
+      "fixture_id": 3019198,
+      "league_id": 9,
+      "league": "德乙",
+      "home": "圣保利",
+      "away": "波鸿",
+      "kickoff": "2026-11-22T03:30:00",
+      "schedule_page": "20261121"
+    },
+    {
+      "fixture_id": 3000854,
+      "league_id": 27,
+      "league": "瑞士超",
+      "home": "锡永",
+      "away": "塞尔维特",
+      "kickoff": "2026-11-22T03:30:00",
+      "schedule_page": "20261121"
+    },
+    {
+      "fixture_id": 2910985,
+      "league_id": 4,
+      "league": "巴西甲",
+      "home": "帕尔梅拉斯",
+      "away": "弗拉门戈",
+      "kickoff": "2026-11-22T03:30:00",
+      "schedule_page": "20261121"
+    },
+    {
+      "fixture_id": 2993872,
+      "league_id": 34,
+      "league": "意甲",
+      "home": "那不勒斯",
+      "away": "都灵",
+      "kickoff": "2026-11-22T03:45:00",
+      "schedule_page": "20261121"
+    },
+    {
+      "fixture_id": 2995398,
+      "league_id": 11,
+      "league": "法甲",
+      "home": "朗斯",
+      "away": "图卢兹",
+      "kickoff": "2026-11-22T03:45:00",
+      "schedule_page": "20261121"
+    },
+    {
+      "fixture_id": 2995399,
+      "league_id": 11,
+      "league": "法甲",
+      "home": "里尔",
+      "away": "里昂",
+      "kickoff": "2026-11-22T03:45:00",
+      "schedule_page": "20261121"
+    },
+    {
+      "fixture_id": 2995402,
+      "league_id": 11,
+      "league": "法甲",
+      "home": "摩纳哥",
+      "away": "欧塞尔",
+      "kickoff": "2026-11-22T03:45:00",
+      "schedule_page": "20261121"
+    },
+    {
+      "fixture_id": 2995405,
+      "league_id": 11,
+      "league": "法甲",
+      "home": "斯特拉斯堡",
+      "away": "布雷斯特",
+      "kickoff": "2026-11-22T03:45:00",
+      "schedule_page": "20261121"
+    },
+    {
+      "fixture_id": 3003624,
+      "league_id": 5,
+      "league": "比甲",
+      "home": "瓦勒海姆",
+      "away": "安特卫普",
+      "kickoff": "2026-11-22T03:45:00",
+      "schedule_page": "20261121"
+    },
+    {
+      "fixture_id": 3003627,
+      "league_id": 5,
+      "league": "比甲",
+      "home": "梅赫伦",
+      "away": "布鲁日",
+      "kickoff": "2026-11-22T03:45:00",
+      "schedule_page": "20261121"
+    },
+    {
+      "fixture_id": 3013770,
+      "league_id": 31,
+      "league": "西甲",
+      "home": "皇家马德里",
+      "away": "塞尔塔",
+      "kickoff": "2026-11-22T04:00:00",
+      "schedule_page": "20261121"
+    },
+    {
+      "fixture_id": 3014185,
+      "league_id": 33,
+      "league": "西乙",
+      "home": "特内里费",
+      "away": "马洛卡",
+      "kickoff": "2026-11-22T04:00:00",
+      "schedule_page": "20261121"
+    },
+    {
+      "fixture_id": 3002117,
+      "league_id": 29,
+      "league": "苏超",
+      "home": "马瑟韦尔",
+      "away": "格拉斯哥流浪者",
+      "kickoff": "2026-11-22T04:00:00",
+      "schedule_page": "20261121"
+    },
+    {
+      "fixture_id": 2996209,
+      "league_id": 16,
+      "league": "荷甲",
+      "home": "格罗宁根",
+      "away": "海伦芬",
+      "kickoff": "2026-11-22T04:00:00",
+      "schedule_page": "20261121"
+    },
+    {
+      "fixture_id": 2996212,
+      "league_id": 16,
+      "league": "荷甲",
+      "home": "特尔斯达",
+      "away": "兹沃勒",
+      "kickoff": "2026-11-22T04:00:00",
+      "schedule_page": "20261121"
+    },
+    {
+      "fixture_id": 3111916,
+      "league_id": 2,
+      "league": "阿甲",
+      "home": "阿根廷青年人",
+      "away": "阿根廷独立",
+      "kickoff": "2026-11-22T04:00:00",
+      "schedule_page": "20261121"
+    },
+    {
+      "fixture_id": 2910979,
+      "league_id": 4,
+      "league": "巴西甲",
+      "home": "巴伊亚",
+      "away": "科里蒂巴",
+      "kickoff": "2026-11-22T04:30:00",
+      "schedule_page": "20261121"
+    },
+    {
+      "fixture_id": 3111663,
+      "league_id": 21,
+      "league": "美职业",
+      "home": "[西2] 达拉斯FC",
+      "away": "波特兰伐木者 [西7]",
+      "kickoff": "2026-11-22T05:00:00",
+      "schedule_page": "20261121"
+    },
+    {
+      "fixture_id": 3111664,
+      "league_id": 21,
+      "league": "美职业",
+      "home": "[东2] 迈阿密国际",
+      "away": "哥伦布机员 [东7]",
+      "kickoff": "2026-11-22T07:00:00",
+      "schedule_page": "20261121"
+    },
+    {
+      "fixture_id": 2997486,
+      "league_id": 140,
+      "league": "墨西联秋",
+      "home": "[秋9] 帕丘卡",
+      "away": "托卢卡 [秋4]",
+      "kickoff": "2026-11-22T07:00:00",
+      "schedule_page": "20261121"
+    },
+    {
+      "fixture_id": 2997487,
+      "league_id": 140,
+      "league": "墨西联秋",
+      "home": "[秋6] 桑托斯拉古纳",
+      "away": "莱昂 [秋8]",
+      "kickoff": "2026-11-22T07:00:00",
       "schedule_page": "20261121"
     }
   ]

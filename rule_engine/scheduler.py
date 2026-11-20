@@ -6,13 +6,14 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from .cli import InsufficientOdds, _analyze_one
 from .config import load_config
-from .db import connect
+from .db import connect, fetch_asian, fetch_match
+from .engine import analyze
 from .ingest import crawl
 from .ingest.all import main as ingest_main
 from .leagues import LEAGUE_IDS
 from .notify import email_config_from_env, send_actionable_email
+from .rules import STRATEGIES, StrategySpec
 from .tracker import (
     append_rows,
     build_actionable_csv,
@@ -29,20 +30,15 @@ TRACKER_PATH = TRACKING_DIR / "paper_tracking.csv"
 
 TZ = ZoneInfo(os.environ.get("APP_TIMEZONE", "Asia/Shanghai"))
 REFRESH_HOURS = (11, 16)  # Beijing time: refresh the schedule cache after 11:00 / 16:00
-WINDOW_MINUTES = int(os.environ.get("SCHEDULE_WINDOW_MINUTES", "60"))
-ANALYSIS_MINUTES = int(os.environ.get("ANALYSIS_DECISION_MINUTES", "60"))
-# Second lane: 0..30 minutes before kickoff, analysed at kickoff - 30.
-T30_WINDOW_MINUTES = int(os.environ.get("SCHEDULE_T30_WINDOW_MINUTES", "30"))
-T30_ANALYSIS_MINUTES = int(os.environ.get("ANALYSIS_T30_MINUTES", "30"))
-ENABLE_T30 = os.environ.get("SCHEDULE_ENABLE_T30", "false").strip().lower() in (
-    "1",
-    "true",
-    "yes",
-    "on",
-)
-MIN_CONFIDENCE = int(os.environ.get("SCHEDULE_MIN_CONFIDENCE", "50"))
+MAX_DECISION_MINUTES = max(spec.decision_minutes for spec in STRATEGIES.values())
+# How late a strategy may still fire after its exact decision cut-off.  The
+# T-10m window is inherently 0..10 minutes; the wider windows tolerate a little
+# polling jitter (e.g. conflict T-120m: 105..120 minutes).
+GRACE_MINUTES = int(os.environ.get("SCHEDULE_GRACE_MINUTES", "15"))
 MIN_ASIAN = int(os.environ.get("SCHEDULE_MIN_ASIAN", "2"))
-MIN_EU = int(os.environ.get("SCHEDULE_MIN_EU", "2"))
+PRICE = os.environ.get("SCHEDULE_PRICE", "consensus").strip().lower()
+if PRICE not in ("consensus", "best"):
+    PRICE = "consensus"
 
 
 def now_local() -> datetime:
@@ -178,11 +174,7 @@ def load_or_refresh_schedule(now: datetime) -> tuple[list[dict], bool]:
 
 
 def settle_tracker(now: datetime) -> None:
-    """Backfill result/profit/CLV whenever the schedule cache is refreshed.
-
-    Settlement is intentionally tied to the 11:00 / 16:00 refresh runs instead
-    of every 30-minute poll, so the live DB import cost is paid twice a day.
-    """
+    """Backfill result/profit/CLV whenever the schedule cache is refreshed."""
     from .settle import run as settle_run
 
     print("  schedule refreshed -> settle finished tracker rows")
@@ -192,20 +184,12 @@ def settle_tracker(now: datetime) -> None:
         print(f"  [warn] settlement failed: {exc}")
 
 
-def t30_enabled() -> bool:
-    """T-30 is opt-in and only valid when its window/decision time are smaller."""
-    return bool(
-        ENABLE_T30
-        and 0 < T30_WINDOW_MINUTES < WINDOW_MINUTES
-        and 0 < T30_ANALYSIS_MINUTES < ANALYSIS_MINUTES
-    )
-
-
 def _seed_recent_tracker_state(state: dict, now: datetime) -> None:
-    """Recover restarts and midnight crossings from the tracker CSV.
+    """Recover state after a restart or midnight rollover.
 
-    Tracker rows are actionable bets, so a recent T-60 row can also enforce
-    T-60 priority after the per-day state file has rolled over at midnight.
+    The tracker only contains triggered bets, so this prevents re-betting a
+    fixture whose signal was already recorded.  Non-triggered strategies are
+    not seeded; they can be re-evaluated safely within their window.
     """
     if not TRACKER_PATH.exists():
         return
@@ -214,14 +198,12 @@ def _seed_recent_tracker_state(state: dict, now: datetime) -> None:
     except Exception:
         return
     cutoff = now - timedelta(hours=2)
-    t60_done = {int(x) for x in state.get("analyzed", [])}
-    t30_done = {int(x) for x in state.get("t30_analyzed", [])}
-    t60_actionable = {int(x) for x in state.get("t60_actionable", [])}
+    done = state.setdefault("done", {})
+    for spec in STRATEGIES.values():
+        done.setdefault(spec.key, [])
+    by_stage = {f"T-{spec.decision_minutes}": spec.key for spec in STRATEGIES.values()}
     for row in rows:
         try:
-            kickoff = datetime.strptime(
-                str(row.get("kickoff", "")).strip(), "%Y-%m-%d %H:%M"
-            )
             analysis_at = datetime.strptime(
                 str(row.get("analysis_at", "")).strip(), "%Y-%m-%d %H:%M:%S"
             )
@@ -230,20 +212,16 @@ def _seed_recent_tracker_state(state: dict, now: datetime) -> None:
             continue
         if analysis_at < cutoff:
             continue
-        delta = (kickoff - analysis_at).total_seconds() / 60
-        if abs(delta - ANALYSIS_MINUTES) <= 1:
-            t60_done.add(fixture_id)
-            t60_actionable.add(fixture_id)
-        elif abs(delta - T30_ANALYSIS_MINUTES) <= 1:
-            t30_done.add(fixture_id)
-    state["analyzed"] = sorted(t60_done)
-    state["t30_analyzed"] = sorted(t30_done)
-    state["t60_actionable"] = sorted(t60_actionable)
+        strategy = by_stage.get(str(row.get("stage", "")).strip())
+        if strategy:
+            done[strategy].append(fixture_id)
+    for key, values in done.items():
+        done[key] = sorted(set(int(v) for v in values))
 
 
 def load_state(now: datetime) -> dict:
     today = now.strftime("%Y-%m-%d")
-    state: dict = {"date": today, "analyzed": []}
+    state: dict = {"date": today, "done": {}}
     if STATE_PATH.exists():
         try:
             loaded = json.loads(STATE_PATH.read_text(encoding="utf-8"))
@@ -251,9 +229,12 @@ def load_state(now: datetime) -> dict:
             loaded = {}
         if loaded.get("date") == today:
             state = loaded
-    state.setdefault("analyzed", [])
-    state.setdefault("t30_analyzed", [])
-    state.setdefault("t60_actionable", [])
+    if not isinstance(state.get("done"), dict):
+        state["done"] = {}
+    for spec in STRATEGIES.values():
+        state["done"][spec.key] = sorted(
+            set(int(v) for v in state["done"].get(spec.key, []))
+        )
     _seed_recent_tracker_state(state, now)
     return state
 
@@ -265,35 +246,16 @@ def save_state(state: dict) -> None:
     )
 
 
-def due_matches(matches: list[dict], done: set[int], now: datetime) -> list[dict]:
-    due = []
-    for match in matches:
-        try:
-            kickoff = datetime.fromisoformat(match["kickoff"])
-        except (KeyError, ValueError):
-            continue
-        minutes = (kickoff - now).total_seconds() / 60
-        if 0 <= minutes <= WINDOW_MINUTES and match["fixture_id"] not in done:
-            due.append({**match, "minutes_to_kickoff": minutes})
-    return due
-
-
-def due_lanes(
-    matches: list[dict], state: dict, now: datetime
-) -> tuple[list[dict], list[dict], list[dict]]:
-    """Split due fixtures into T-60, T-30, and T-30 blocked by T-60 priority.
-
-    T-60 lane: 30..60 minutes before kickoff (or 0..60 when T-30 is disabled).
-    T-30 lane: 0..30 minutes before kickoff.
-    A fixture with a T-60 actionable bet never gets a T-30 bet in the same day.
-    """
-    t60_done = {int(x) for x in state.get("analyzed", [])}
-    t30_done = {int(x) for x in state.get("t30_analyzed", [])}
-    t60_actionable = {int(x) for x in state.get("t60_actionable", [])}
-    t60_due: list[dict] = []
-    t30_due: list[dict] = []
-    t30_blocked: list[dict] = []
-    use_t30 = t30_enabled()
+def due_pairs(
+    matches: list[dict],
+    state: dict,
+    now: datetime,
+    strategies: list[StrategySpec] | None = None,
+) -> list[dict]:
+    """(fixture, strategy) pairs whose decision window has been reached."""
+    specs = strategies or list(STRATEGIES.values())
+    done = state.get("done", {})
+    out: list[dict] = []
     for match in matches:
         try:
             kickoff = datetime.fromisoformat(match["kickoff"])
@@ -301,167 +263,102 @@ def due_lanes(
         except (KeyError, TypeError, ValueError):
             continue
         minutes = (kickoff - now).total_seconds() / 60
-        if not 0 <= minutes <= WINDOW_MINUTES:
+        if minutes <= 0 or minutes > MAX_DECISION_MINUTES:
             continue
-        if use_t30 and minutes <= T30_WINDOW_MINUTES:
-            if fixture_id in t30_done:
+        for spec in specs:
+            # Only fire inside [decision - grace, decision]; never early.
+            lower = max(0.0, spec.decision_minutes - GRACE_MINUTES)
+            if minutes < lower or minutes > spec.decision_minutes:
                 continue
-            item = {
-                **match,
-                "minutes_to_kickoff": minutes,
-                "stage": "T-30",
-                "decision_minutes": T30_ANALYSIS_MINUTES,
-            }
-            if fixture_id in t60_actionable:
-                t30_blocked.append(item)
-            else:
-                t30_due.append(item)
-        else:
-            if fixture_id in t60_done:
+            if fixture_id in set(done.get(spec.key, [])):
                 continue
-            t60_due.append(
+            out.append(
                 {
                     **match,
+                    "strategy": spec.key,
+                    "strategy_label": spec.label,
+                    "decision_minutes": spec.decision_minutes,
                     "minutes_to_kickoff": minutes,
-                    "stage": "T-60",
-                    "decision_minutes": ANALYSIS_MINUTES,
                 }
             )
-    return t60_due, t30_due, t30_blocked
-
-
-def append_actionable_json(results, now: datetime) -> Path:
-    TRACKING_DIR.mkdir(parents=True, exist_ok=True)
-    path = TRACKING_DIR / f"actionable_{now.strftime('%Y-%m-%d')}.json"
-    existing = []
-    if path.exists():
-        try:
-            existing = json.loads(path.read_text(encoding="utf-8"))
-        except Exception:
-            existing = []
-    keys = {
-        (item.get("fixture_id"), item.get("analysis_at"))
-        for item in existing
-    }
-    for result in results:
-        row = result_to_tracker_row(result)
-        key = (row["fixture_id"], row["analysis_at"])
-        if key not in keys:
-            existing.append(row)
-            keys.add(key)
-    path.write_text(
-        json.dumps(existing, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
-    return path
+    return out
 
 
 def run_once(now: datetime) -> int:
     state = load_state(now)
-    t60_done = {int(x) for x in state.get("analyzed", [])}
-    t30_done = {int(x) for x in state.get("t30_analyzed", [])}
-    t60_actionable = {int(x) for x in state.get("t60_actionable", [])}
     matches, refreshed = load_or_refresh_schedule(now)
     if refreshed:
         settle_tracker(now)
-    t60_due, t30_due, t30_blocked = due_lanes(matches, state, now)
-    due = t60_due + t30_due
-    if not due and not t30_blocked:
-        print(
-            f"[{now:%Y-%m-%d %H:%M}] no due fixtures "
-            f"(cache={len(matches)}, today T-60={len(t60_done)}, "
-            f"T-30={len(t30_done)})"
-        )
+
+    due = due_pairs(matches, state, now)
+    if not due:
+        print(f"[{now:%Y-%m-%d %H:%M}] no due fixture/strategy pairs")
         save_state(state)
         return 0
 
-    if due:
-        print(f"[{now:%Y-%m-%d %H:%M}] due {len(due)} fixture(s):")
-        for match in due:
-            print(
-                f"  [{match['stage']}] {match['fixture_id']}  "
-                f"league={match['league_id']}  kickoff={match['kickoff']}  "
-                f"{match['minutes_to_kickoff']:.0f}min"
-            )
-    for match in t30_blocked:
+    print(f"[{now:%Y-%m-%d %H:%M}] due {len(due)} pair(s):")
+    for item in due:
         print(
-            f"  [T-30] {match['fixture_id']} -> blocked: "
-            f"T-60 already actionable"
+            f"  [{item['strategy']}] {item['fixture_id']}  "
+            f"league={item['league_id']}  kickoff={item['kickoff']}  "
+            f"{item['minutes_to_kickoff']:.0f}min"
         )
 
-    t60_analyzed_ids: set[int] = set()
-    t30_analyzed_ids: set[int] = set()
-    t30_blocked_ids: set[int] = set()
-    t60_actionable_ids: set[int] = set()
+    fixture_ids = sorted({int(item["fixture_id"]) for item in due})
+    import_rc = ingest_main(
+        ["--ids", ",".join(str(x) for x in fixture_ids), "--no-save", "--log-level", "WARNING"]
+    )
+    if import_rc != 0:
+        print(f"  [warn] import exited with code {import_rc}")
+
+    cfg = load_config()
+    conn = connect(cfg)
     results = []
     skipped = 0
-
-    if due:
-        ids = [str(match["fixture_id"]) for match in due]
-        import_rc = ingest_main(
-            ["--ids", ",".join(ids), "--no-save", "--log-level", "WARNING"]
-        )
-        if import_rc != 0:
-            print(f"  [warn] import exited with code {import_rc}")
-
-        cfg = load_config()
-        conn = connect(cfg)
-        try:
-            for match in due:
-                fixture_id = int(match["fixture_id"])
-                stage = match["stage"]
-                try:
-                    result, _ = _analyze_one(
-                        conn,
-                        fixture_id,
-                        None,
-                        match["decision_minutes"],
-                        "auto",
-                        "out",
-                        write=False,
-                        only_giving=True,
-                        min_confidence=MIN_CONFIDENCE,
-                        min_asian_companies=MIN_ASIAN,
-                        min_eu_companies=MIN_EU,
-                    )
-                    results.append(result)
-                    if stage == "T-60":
-                        t60_analyzed_ids.add(fixture_id)
-                        if result.actionable:
-                            t60_actionable_ids.add(fixture_id)
-                    else:
-                        t30_analyzed_ids.add(fixture_id)
-                    print(
-                        f"  [{stage}] {fixture_id} -> {result.direction_name} "
-                        f"conf={result.confidence} {result.stake} "
-                        f"actionable={'yes' if result.actionable else 'no'}"
-                    )
-                except InsufficientOdds as exc:
+    try:
+        for item in due:
+            fixture_id = int(item["fixture_id"])
+            strategy = item["strategy"]
+            try:
+                match = fetch_match(conn, fixture_id)
+                if not match:
                     skipped += 1
-                    if stage == "T-60":
-                        t60_analyzed_ids.add(fixture_id)
-                    else:
-                        t30_analyzed_ids.add(fixture_id)
-                    print(f"  [{stage}] {fixture_id} -> skip: {exc}")
-                except Exception as exc:  # noqa: BLE001 - retry next run
-                    print(f"  [{stage}] {fixture_id} -> error: {exc}")
-        finally:
-            conn.close()
+                    continue
+                asian = fetch_asian(conn, fixture_id, match.match_time)
+                if not asian:
+                    skipped += 1
+                    continue
+                result = analyze(
+                    match,
+                    strategy,
+                    asian,
+                    price=PRICE,
+                    min_companies=MIN_ASIAN,
+                )
+                if result.data_quality.get("coverage_ok"):
+                    state["done"].setdefault(strategy, []).append(fixture_id)
+                else:
+                    skipped += 1
+                results.append(result)
+                print(
+                    f"  [{item['strategy_label']}] {fixture_id} -> "
+                    f"{result.direction_name} "
+                    f"{'触发' if result.triggered else '未触发'} "
+                    f"{result.stake}"
+                )
+            except Exception as exc:  # noqa: BLE001 - retry next run
+                print(f"  [{item['strategy_label']}] {fixture_id} -> error: {exc}")
+    finally:
+        conn.close()
 
-    # Blocked T-30 fixtures are not analysed; remember them so they do not
-    # re-enter the T-30 lane on every 30-minute poll.
-    for match in t30_blocked:
-        t30_blocked_ids.add(int(match["fixture_id"]))
-
-    actionable = [result for result in results if result.actionable]
+    actionable = [r for r in results if r.actionable]
     if actionable:
-        rows = [result_to_tracker_row(result) for result in actionable]
+        rows = [result_to_tracker_row(r) for r in actionable]
         try:
             added, updated = append_rows(TRACKER_PATH, rows)
             print(f"  tracker: added={added} updated={updated} -> {TRACKER_PATH}")
         except OSError as exc:
             print(f"  [warn] tracker write failed: {exc}")
-        json_path = append_actionable_json(actionable, now)
-        print(f"  actionable json -> {json_path}")
 
         email_cfg = email_config_from_env()
         if email_cfg is None:
@@ -486,20 +383,14 @@ def run_once(now: datetime) -> int:
             except Exception as exc:  # noqa: BLE001
                 print(f"  [warn] email send failed: {exc}")
 
-    state["analyzed"] = sorted(t60_done | t60_analyzed_ids)
-    state["t30_analyzed"] = sorted(
-        t30_done | t30_analyzed_ids | t30_blocked_ids
-    )
-    state["t60_actionable"] = sorted(t60_actionable | t60_actionable_ids)
+    for key, values in state["done"].items():
+        state["done"][key] = sorted(set(int(v) for v in values))
     save_state(state)
     print(
-        f"  done: T-60 analyzed={len(t60_analyzed_ids)} "
-        f"T-30 analyzed={len(t30_analyzed_ids)} "
-        f"T-30 blocked={len(t30_blocked_ids)} skipped={skipped} "
-        f"actionable={len(actionable)} "
-        f"today T-60={len(state['analyzed'])} T-30={len(state['t30_analyzed'])}"
+        f"  done: pairs={len(results)} skipped={skipped} "
+        f"actionable={len(actionable)}"
     )
-    return len(t60_analyzed_ids | t30_analyzed_ids)
+    return len(results)
 
 
 def main() -> int:

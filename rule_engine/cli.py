@@ -5,34 +5,39 @@ import sys
 from datetime import datetime, timedelta
 
 from .backtest import print_summary, run_backtest, summarize, write_csv, write_summary
-from .walkforward import (
-    build_summary as build_walkforward_summary,
-    load_csv as load_walkforward_csv,
-    print_summary as print_walkforward_summary,
-    write_json as write_walkforward_json,
-    write_markdown as write_walkforward_markdown,
-)
 from .config import load_config
 from .db import (
-    CORE_ASIAN,
     connect,
     fetch_asian,
-    fetch_eu,
     fetch_match,
-    fetch_sup,
     list_fixtures,
     list_upcoming_matches,
 )
-from .engine import analyze, apply_action_filters, determine_mode
+from .engine import AnalysisResult, analyze
+from .ingest import crawl
 from .leagues import LEAGUE_IDS
 from .notify import email_config_from_env, send_actionable_email
 from .report import write_outputs
+from .rules import (
+    DEFAULT_STRATEGY_KEYS,
+    PRICE_MODES,
+    STRATEGIES,
+    StrategySpec,
+    resolve_strategies,
+)
 from .tracker import (
     DEFAULT_TRACKER_PATH,
     append_rows as append_tracker_rows,
     build_actionable_csv,
     result_to_tracker_row,
     update_tracking_results,
+)
+from .walkforward import (
+    build_summary as build_walkforward_summary,
+    load_csv as load_walkforward_csv,
+    print_summary as print_walkforward_summary,
+    write_json as write_walkforward_json,
+    write_markdown as write_walkforward_markdown,
 )
 
 
@@ -64,164 +69,170 @@ def _parse_ids(values) -> list[int]:
     return ids
 
 
-def _parse_time(value: str | None) -> datetime | None:
-    if not value:
-        return None
-    for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M"):
-        try:
-            return datetime.strptime(value, fmt)
-        except ValueError:
-            continue
-    raise ValueError("时间格式应为 'YYYY-MM-DD HH:MM[:SS]'")
-
-
 class InsufficientOdds(Exception):
-    """Raised when an imminent fixture does not have enough odds to analyze."""
+    """Raised when an imminent fixture has no Asian odds history at all."""
 
 
-def _resolve_analysis_time(
-    match,
-    base_time: datetime | None,
-    decision_minutes: int | None,
-) -> datetime:
-    """Per-match decision time: kickoff - N minutes, or a fixed timestamp, or now."""
-    if decision_minutes is not None:
-        return match.match_time - timedelta(minutes=decision_minutes)
-    return base_time or datetime.now()
+def _resolve_price(value: str | None) -> str:
+    price = (value or "consensus").strip().lower()
+    if price not in PRICE_MODES:
+        raise ValueError(f"--price 必须是 {PRICE_MODES} 之一")
+    return price
 
 
-def _action_filters(args) -> tuple[bool, int | None]:
-    only_giving = bool(
-        getattr(args, "only_giving", False)
-        or getattr(args, "experimental_default", False)
-    )
-    min_conf = getattr(args, "min_confidence", None)
-    if getattr(args, "experimental_default", False) and min_conf is None:
-        min_conf = 50
-    return only_giving, min_conf
+def _resolve_specs(values) -> list[StrategySpec]:
+    return resolve_strategies(values or list(DEFAULT_STRATEGY_KEYS))
 
 
-def _decision_minutes_for(args) -> int | None:
-    if (
-        getattr(args, "experimental_default", False)
-        and getattr(args, "decision_minutes", None) is None
-        and getattr(args, "as_of", None) is None
-    ):
-        return 60
-    return getattr(args, "decision_minutes", None)
+def _reached_specs(
+    match, strategies, now: datetime | None = None
+) -> tuple[list[StrategySpec], list[StrategySpec]]:
+    """Split requested strategies into (decision cut-off reached, future).
 
-
-def _print_result(result) -> None:
-    m = result.match
-    print(
-        f"{m.fixture_id}  {m.league or '-':<8}  {m.home} vs {m.away}  "
-        f"[{result.mode}]  -> {result.direction_name}  "
-        f"conf={result.confidence}({result.confidence_label})  {result.stake}"
-    )
-    print(f"    {result.summary}")
-    side = f"{result.side_line:+.2f}" if result.side_line is not None else "-"
-    kind = (
-        "让球方"
-        if result.is_giving
-        else ("受让/PK" if result.side_line is not None else "-")
-    )
-    print(
-        f"    side_line={side} ({kind}) | "
-        f"实验默认={'是' if result.experimental_default else '否'} | "
-        f"可下注={'是' if result.actionable else '否'}"
-    )
-    if result.filter_notes:
-        print(f"    过滤: {' | '.join(result.filter_notes)}")
-    if result.conflicts:
-        print(f"    conflicts: {' | '.join(result.conflicts[:3])}")
+    A live one-shot analysis must not pretend that a T-10m snapshot exists
+    while the match is still two hours away.
+    """
+    now = now or datetime.now()
+    reached: list[StrategySpec] = []
+    pending: list[StrategySpec] = []
+    for spec in _resolve_specs(strategies):
+        cutoff = match.match_time - timedelta(minutes=spec.decision_minutes)
+        (reached if cutoff <= now else pending).append(spec)
+    return reached, pending
 
 
 def _analyze_one(
     conn,
     fixture_id: int,
-    base_time: datetime | None,
-    decision_minutes: int | None,
-    mode: str,
+    strategies,
     out_dir: str,
     write: bool,
-    only_giving: bool = False,
-    min_confidence: int | None = None,
+    price: str = "consensus",
     min_asian_companies: int | None = None,
-    min_eu_companies: int | None = None,
-):
+) -> tuple[list[AnalysisResult], list[tuple]]:
     match = fetch_match(conn, fixture_id)
     if not match:
-        raise ValueError(f"fixture {fixture_id} not found")
-    analysis_time = _resolve_analysis_time(match, base_time, decision_minutes)
-    resolved_mode = (
-        "pre"
-        if decision_minutes is not None
-        else determine_mode(match, analysis_time, mode)
-    )
-    asian = fetch_asian(conn, fixture_id, resolved_mode, analysis_time)
-    euro = fetch_eu(conn, fixture_id, analysis_time)
-    if min_asian_companies is not None or min_eu_companies is not None:
-        core = len(
-            [
-                s
-                for s in asian
-                if s.company_id in CORE_ASIAN and s.rows
-            ]
+        raise ValueError(
+            f"fixture {fixture_id} 不在 match_list_all（数据库尚未导入）。"
+            f"先运行: python -m rule_engine import --ids {fixture_id}"
         )
-        eu_count = len([s for s in euro if s.rows])
-        if min_asian_companies is not None and core < min_asian_companies:
-            raise InsufficientOdds(
-                f"亚盘核心公司 {core} < {min_asian_companies}"
-            )
-        if min_eu_companies is not None and eu_count < min_eu_companies:
-            raise InsufficientOdds(
-                f"欧赔公司 {eu_count} < {min_eu_companies}"
-            )
-    sup = fetch_sup(conn, match)
-    result = analyze(match, resolved_mode, analysis_time, asian, euro, sup)
-    apply_action_filters(
-        result, only_giving=only_giving, min_confidence=min_confidence
+
+    asian = fetch_asian(conn, fixture_id, match.match_time)
+    if not asian:
+        raise InsufficientOdds(f"fixture {fixture_id} 没有亚盘历史")
+
+    min_companies = min_asian_companies or 2
+    specs, pending = _reached_specs(match, strategies)
+    if pending:
+        print(
+            f"[pending] fixture {fixture_id}: "
+            + "、".join(spec.label for spec in pending)
+            + " 决策时点未到，跳过",
+            file=sys.stderr,
+        )
+    results: list[AnalysisResult] = []
+    paths: list[tuple] = []
+    for spec in specs:
+        result = analyze(
+            match,
+            spec.key,
+            asian,
+            price=price,
+            min_companies=min_companies,
+        )
+        results.append(result)
+        if write:
+            paths.append(write_outputs(result, out_dir))
+        else:
+            paths.append((None, None))
+    return results, paths
+
+
+def _print_result(result: AnalysisResult) -> None:
+    m = result.match
+    signal = "触发" if result.triggered else "未触发"
+    side = f"{result.side_line:+.2f}" if result.side_line is not None else "-"
+    water = f"{result.water:.3f}" if result.water is not None else "-"
+    print(
+        f"{m.fixture_id}  {m.league or '-':<8}  {m.home} vs {m.away}  "
+        f"[{result.strategy_label}] {result.analysis_time:%m-%d %H:%M}  "
+        f"-> {result.direction_name}  {signal}  side_line={side} water={water}"
     )
-    paths = write_outputs(result, out_dir) if write else (None, None)
-    return result, paths
+    print(f"    {result.reason}")
+    if result.triggered:
+        best = (
+            f"{result.best_water:.3f} @ {result.best_company}"
+            if result.best_water is not None
+            else "-"
+        )
+        print(
+            f"    下注: {result.direction_name}  盘口 {side}  水位 {water} "
+            f"({result.price_mode}) | best {best}"
+        )
+
+
+def _collect_results(
+    conn,
+    fixture_ids: list[int],
+    strategies,
+    out_dir: str,
+    write: bool,
+    price: str,
+    min_asian_companies: int | None,
+    print_results: bool,
+) -> tuple[list[AnalysisResult], list[tuple[int, str]], int]:
+    results: list[AnalysisResult] = []
+    failures: list[tuple[int, str]] = []
+    skipped = 0
+    for fixture_id in fixture_ids:
+        try:
+            fixture_results, paths = _analyze_one(
+                conn,
+                fixture_id,
+                strategies,
+                out_dir,
+                write=write,
+                price=price,
+                min_asian_companies=min_asian_companies,
+            )
+            results.extend(fixture_results)
+            if print_results:
+                for result, (html_path, json_path) in zip(fixture_results, paths):
+                    _print_result(result)
+                    if html_path:
+                        print(f"    html: {html_path}")
+                        print(f"    json: {json_path}")
+        except InsufficientOdds as exc:
+            skipped += 1
+            print(f"[skip] {exc}", file=sys.stderr)
+        except Exception as exc:  # noqa: BLE001 - one fixture must not stop the batch
+            failures.append((fixture_id, str(exc)))
+            print(f"[error] fixture {fixture_id}: {exc}", file=sys.stderr)
+    return results, failures, skipped
 
 
 def cmd_analyze(args) -> int:
     try:
         fixture_ids = _parse_ids(args.ids) if args.ids else [args.fixture_id]
+        price = _resolve_price(args.price)
+        _resolve_specs(args.strategies)
     except ValueError as exc:
         print(f"[error] {exc}", file=sys.stderr)
         return 2
 
     cfg = load_config(database=args.database)
     conn = connect(cfg)
-    base_time = _parse_time(args.as_of)
-    only_giving, min_conf = _action_filters(args)
-    decision_minutes = _decision_minutes_for(args)
-    results = []
-    failures: list[tuple[int, str]] = []
     try:
-        for fixture_id in fixture_ids:
-            try:
-                result, (html_path, json_path) = _analyze_one(
-                    conn,
-                    fixture_id,
-                    base_time,
-                    decision_minutes,
-                    args.mode,
-                    args.out_dir,
-                    write=not args.json_only,
-                    only_giving=only_giving,
-                    min_confidence=min_conf,
-                )
-                results.append(result)
-                if not args.json_only:
-                    _print_result(result)
-                    print(f"    html: {html_path}")
-                    print(f"    json: {json_path}")
-            except Exception as exc:  # noqa: BLE001 - one fixture must not stop the batch
-                failures.append((fixture_id, str(exc)))
-                print(f"[error] fixture {fixture_id}: {exc}", file=sys.stderr)
+        results, failures, skipped = _collect_results(
+            conn,
+            fixture_ids,
+            args.strategies,
+            args.out_dir,
+            write=not args.json_only,
+            price=price,
+            min_asian_companies=args.min_asian_companies,
+            print_results=not args.json_only,
+        )
     finally:
         conn.close()
 
@@ -236,7 +247,9 @@ def cmd_analyze(args) -> int:
         print(json.dumps(payload, ensure_ascii=False, indent=2))
     else:
         print(
-            f"\nanalyzed {len(results)}/{len(fixture_ids)}"
+            f"\nanalyzed {len(fixture_ids)} fixture(s), "
+            f"{len(results)} strategy result(s)"
+            + (f", skipped={skipped}" if skipped else "")
             + (f", failures={len(failures)}" if failures else "")
         )
     return 1 if failures else 0
@@ -250,34 +263,40 @@ def cmd_scan(args) -> int:
         if not fixtures:
             print(f"no fixtures on {args.date}")
             return 0
-        base_time = _parse_time(args.as_of)
-        only_giving, min_conf = _action_filters(args)
-        decision_minutes = _decision_minutes_for(args)
-        rows = []
+        price = _resolve_price(args.price)
+        rows: list[AnalysisResult] = []
         for match in fixtures:
-            analysis_time = _resolve_analysis_time(
-                match, base_time, decision_minutes
-            )
-            mode = (
-                "pre"
-                if decision_minutes is not None
-                else determine_mode(match, analysis_time, args.mode)
-            )
-            asian = fetch_asian(conn, match.fixture_id, mode, analysis_time)
-            euro = fetch_eu(conn, match.fixture_id, analysis_time)
-            sup = fetch_sup(conn, match)
-            result = analyze(match, mode, analysis_time, asian, euro, sup)
-            apply_action_filters(
-                result, only_giving=only_giving, min_confidence=min_conf
-            )
-            if args.only_actionable and not result.actionable:
+            try:
+                asian = fetch_asian(conn, match.fixture_id, match.match_time)
+            except Exception as exc:  # noqa: BLE001
+                print(f"[error] fixture {match.fixture_id}: {exc}", file=sys.stderr)
                 continue
-            rows.append(result)
-            if args.write:
-                write_outputs(result, args.out_dir)
+            if not asian:
+                continue
+            specs, pending = _reached_specs(match, args.strategies)
+            if pending:
+                print(
+                    f"[pending] fixture {match.fixture_id}: "
+                    + "、".join(spec.label for spec in pending)
+                    + " 决策时点未到，跳过",
+                    file=sys.stderr,
+                )
+            for spec in specs:
+                result = analyze(
+                    match,
+                    spec.key,
+                    asian,
+                    price=price,
+                    min_companies=args.min_asian_companies,
+                )
+                if args.only_actionable and not result.actionable:
+                    continue
+                rows.append(result)
+                if args.write:
+                    write_outputs(result, args.out_dir)
         for result in rows:
             _print_result(result)
-        print(f"\n{len(rows)} / {len(fixtures)} fixtures shown")
+        print(f"\n{len(rows)} result(s) from {len(fixtures)} fixture(s)")
         return 0
     finally:
         conn.close()
@@ -351,8 +370,6 @@ def _upcoming_fixture_ids(
 
 def _discover_within_ids(args, within_minutes: int, league_ids=None) -> list[int]:
     """Crawl schedule pages for fixtures kicking off in the next N minutes."""
-    from .ingest import crawl
-
     openssl = crawl.find_openssl(args.openssl_bin)
     return crawl.discover_upcoming_fixtures(
         openssl,
@@ -366,8 +383,6 @@ def _discover_within_ids(args, within_minutes: int, league_ids=None) -> list[int
 
 def _discover_fixture_ids(args) -> list[int]:
     """Resolve --dates/--leagues to fixture ids: schedule discovery, then DB fallback."""
-    from .ingest import crawl
-
     dates = crawl.parse_dates(args.dates)
     leagues = crawl.parse_leagues(args.leagues) if args.leagues else None
     if leagues is None and not getattr(args, "all_leagues", False):
@@ -399,9 +414,15 @@ def _discover_fixture_ids(args) -> list[int]:
 
 def cmd_run(args) -> int:
     """One command: import titan007 odds, then run the rule engine."""
-    if args.within_minutes is not None:
-        from .ingest import crawl
+    try:
+        price = _resolve_price(args.price)
+        _resolve_specs(args.strategies)
+    except ValueError as exc:
+        print(f"[error] {exc}", file=sys.stderr)
+        return 2
 
+    league_ids = None
+    if args.within_minutes is not None:
         if args.all_leagues:
             league_ids = None
         elif args.leagues:
@@ -487,43 +508,18 @@ def cmd_run(args) -> int:
 
     cfg = load_config(database=args.database)
     conn = connect(cfg)
-    base_time = _parse_time(args.as_of)
-    only_giving, min_conf = _action_filters(args)
-    decision_minutes = _decision_minutes_for(args)
-    min_asian = args.min_asian_companies if args.within_minutes is not None else None
-    min_eu = args.min_eu_companies if args.within_minutes is not None else None
     write_reports = not (args.json_only or args.no_report or args.ci)
-    results = []
-    failures: list[tuple[int, str]] = []
-    skipped = 0
     try:
-        for fixture_id in fixture_ids:
-            try:
-                result, (html_path, json_path) = _analyze_one(
-                    conn,
-                    fixture_id,
-                    base_time,
-                    decision_minutes,
-                    args.mode,
-                    args.out_dir,
-                    write=write_reports,
-                    only_giving=only_giving,
-                    min_confidence=min_conf,
-                    min_asian_companies=min_asian,
-                    min_eu_companies=min_eu,
-                )
-                results.append(result)
-                if not args.json_only:
-                    _print_result(result)
-                    if html_path:
-                        print(f"    html: {html_path}")
-                        print(f"    json: {json_path}")
-            except InsufficientOdds as exc:
-                skipped += 1
-                print(f"[skip] fixture {fixture_id}: {exc}", file=sys.stderr)
-            except Exception as exc:  # noqa: BLE001 - one fixture must not stop the batch
-                failures.append((fixture_id, str(exc)))
-                print(f"[error] fixture {fixture_id}: {exc}", file=sys.stderr)
+        results, failures, skipped = _collect_results(
+            conn,
+            fixture_ids,
+            args.strategies,
+            args.out_dir,
+            write=write_reports,
+            price=price,
+            min_asian_companies=args.min_asian_companies,
+            print_results=not args.json_only,
+        )
     finally:
         conn.close()
 
@@ -583,7 +579,8 @@ def cmd_run(args) -> int:
             )
     else:
         print(
-            f"\nanalyzed {len(results)}/{len(fixture_ids)}"
+            f"\nanalyzed {len(fixture_ids)} fixture(s), "
+            f"{len(results)} strategy result(s)"
             + (f", skipped={skipped}" if skipped else "")
             + (f", failures={len(failures)}" if failures else "")
         )
@@ -600,7 +597,7 @@ def cmd_run(args) -> int:
 
 
 def cmd_track(args) -> int:
-    """Analyze fixtures and append actionable gate bets to a CSV tracker."""
+    """Analyze fixtures and append triggered bets to a CSV tracker."""
     if args.leagues and not args.dates:
         print("[error] --leagues requires --dates", file=sys.stderr)
         return 2
@@ -621,34 +618,31 @@ def cmd_track(args) -> int:
 
     cfg = load_config(database=args.database)
     conn = connect(cfg)
-    base_time = _parse_time(args.as_of)
-    decision_minutes = None if base_time is not None else args.decision_minutes
-    only_giving = not args.all_sides
     rows = []
     failures = 0
     actionable = 0
     try:
         for fixture_id in fixture_ids:
             try:
-                result, _ = _analyze_one(
+                results, _ = _analyze_one(
                     conn,
                     fixture_id,
-                    base_time,
-                    decision_minutes,
-                    "auto",
+                    args.strategies,
                     args.excel,
                     write=False,
-                    only_giving=only_giving,
-                    min_confidence=args.min_confidence,
+                    price=args.price,
+                    min_asian_companies=args.min_asian_companies,
                 )
+            except Exception as exc:  # noqa: BLE001
+                failures += 1
+                print(f"[error] fixture {fixture_id}: {exc}", file=sys.stderr)
+                continue
+            for result in results:
                 if result.actionable:
                     actionable += 1
                 if result.actionable or args.include_non_actionable:
                     rows.append(result_to_tracker_row(result))
                     _print_result(result)
-            except Exception as exc:  # noqa: BLE001
-                failures += 1
-                print(f"[error] fixture {fixture_id}: {exc}", file=sys.stderr)
     finally:
         conn.close()
 
@@ -661,7 +655,7 @@ def cmd_track(args) -> int:
             file=sys.stderr,
         )
     print(
-        f"\nanalyzed {len(fixture_ids)} | actionable={actionable} | "
+        f"\nanalyzed {len(fixture_ids)} fixture(s) | actionable={actionable} | "
         f"tracker added={added} updated={updated} | {args.excel}"
     )
     return 1 if failures else 0
@@ -684,6 +678,11 @@ def cmd_backtest(args) -> int:
     start = args.start or (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
     end = args.end or datetime.now().strftime("%Y-%m-%d")
     fixture_ids = _parse_ids(args.fixture_ids) if args.fixture_ids else None
+    try:
+        specs = _resolve_specs(args.strategies)
+    except ValueError as exc:
+        print(f"[error] {exc}", file=sys.stderr)
+        return 2
     cfg = load_config(database=args.database)
     conn = connect(cfg)
     try:
@@ -691,26 +690,28 @@ def cmd_backtest(args) -> int:
             conn,
             start_date=start,
             end_date=end,
-            decision_minutes=args.decision_minutes,
+            strategies=[spec.key for spec in specs],
             min_age_hours=args.min_age_hours,
             limit=args.limit,
             league=args.league,
             fixture_ids=fixture_ids,
-            min_confidence=args.min_confidence,
+            min_companies=args.min_asian_companies,
             progress=lambda i, n: print(f"  analyzed {i}/{n}...", flush=True),
         )
         summary = summarize(
             records,
             period={"from": start, "to": end},
-            decision_minutes=args.decision_minutes,
+            strategies=[spec.key for spec in specs],
             min_age_hours=args.min_age_hours,
-            min_confidence=args.min_confidence,
         )
         csv_path = write_csv(records, args.out)
         summary_path = write_summary(summary, args.summary)
         print_summary(summary)
         print(f"\nCSV: {csv_path}\nSummary: {summary_path}")
-        return 0 if summary["errors"] == 0 else 1
+        errors = sum(
+            data["errors"] for data in summary["by_strategy"].values()
+        )
+        return 0 if errors == 0 else 1
     finally:
         conn.close()
 
@@ -729,16 +730,15 @@ def cmd_walkforward(args) -> int:
                 conn,
                 start_date=start,
                 end_date=end,
-                decision_minutes=args.decision_minutes,
+                strategies=args.strategies,
                 min_age_hours=args.min_age_hours,
                 limit=args.limit,
-                min_confidence=45,
-                progress=lambda i, n: print(f"  analyzed {i}/{n}...", flush=True),
+                min_companies=args.min_asian_companies,
             )
         finally:
             conn.close()
         rows = [r.to_row() for r in records if r.bet == 1]
-        source = f"{start}..{end} T-{args.decision_minutes}"
+        source = f"{start}..{end}"
 
     summary = build_walkforward_summary(rows, source=source)
     print_walkforward_summary(summary)
@@ -748,12 +748,41 @@ def cmd_walkforward(args) -> int:
     return 0
 
 
+def _strategy_help() -> str:
+    return "、".join(f"{key}={spec.label}" for key, spec in STRATEGIES.items())
+
+
+def _add_analysis_args(
+    parser: argparse.ArgumentParser, with_price: bool = True
+) -> None:
+    parser.add_argument(
+        "--strategies",
+        nargs="+",
+        default=["all"],
+        help=f"策略：all 或 {_strategy_help()}",
+    )
+    if with_price:
+        parser.add_argument(
+            "--price",
+            choices=PRICE_MODES,
+            default="consensus",
+            help="下注价：consensus=决策快照平均水位，best=主盘口最高水位（默认 consensus）",
+        )
+    parser.add_argument(
+        "--min-asian-companies",
+        type=int,
+        default=2,
+        help="每个快照主盘口至少需要的公司数（默认 2）",
+    )
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Phase 1 deterministic odds-trajectory rule engine",
+        description="Multi-window Asian-handicap consensus rule engine",
         epilog=(
             "Import odds: python -m rule_engine import --ids 3010473\n"
-            "Ingest help: python -m rule_engine.ingest --help"
+            "Ingest help: python -m rule_engine.ingest --help\n"
+            f"Strategies: {_strategy_help()}"
         ),
     )
     parser.add_argument("--database", help="override MYSQL_DB")
@@ -767,27 +796,7 @@ def build_parser() -> argparse.ArgumentParser:
         nargs="+",
         help="multiple fixture ids: '--ids 3068888,3069034' or '--ids 3068888 3069034'",
     )
-    p_analyze.add_argument("--mode", choices=("auto", "pre", "inplay"), default="auto")
-    p_analyze.add_argument(
-        "--only-giving",
-        action="store_true",
-        help="only bet the team giving the handicap (side_line < 0)",
-    )
-    p_analyze.add_argument(
-        "--min-confidence", type=int, help="suppress bets below this confidence"
-    )
-    p_analyze.add_argument(
-        "--experimental-default",
-        action="store_true",
-        help="Phase 3 gate: --only-giving + --min-confidence 50 + T-60 when no time is given",
-    )
-    analyze_time = p_analyze.add_mutually_exclusive_group()
-    analyze_time.add_argument("--as-of", help="fixed analysis time, YYYY-MM-DD HH:MM[:SS]")
-    analyze_time.add_argument(
-        "--decision-minutes",
-        type=int,
-        help="per-match analysis time = kickoff - N minutes; implies pre mode",
-    )
+    _add_analysis_args(p_analyze)
     p_analyze.add_argument("--out-dir", default="out")
     p_analyze.add_argument("--json-only", action="store_true")
     p_analyze.set_defaults(func=cmd_analyze)
@@ -795,27 +804,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_scan = sub.add_parser("scan", help="scan all fixtures on a date")
     p_scan.add_argument("--date", required=True, help="YYYY-MM-DD")
     p_scan.add_argument("--limit", type=int, default=200)
-    p_scan.add_argument("--mode", choices=("auto", "pre", "inplay"), default="auto")
-    p_scan.add_argument(
-        "--only-giving",
-        action="store_true",
-        help="only bet the team giving the handicap (side_line < 0)",
-    )
-    p_scan.add_argument(
-        "--min-confidence", type=int, help="suppress bets below this confidence"
-    )
-    p_scan.add_argument(
-        "--experimental-default",
-        action="store_true",
-        help="Phase 3 gate: --only-giving + --min-confidence 50 + T-60 when no time is given",
-    )
-    scan_time = p_scan.add_mutually_exclusive_group()
-    scan_time.add_argument("--as-of", help="fixed analysis time, YYYY-MM-DD HH:MM[:SS]")
-    scan_time.add_argument(
-        "--decision-minutes",
-        type=int,
-        help="per-match analysis time = kickoff - N minutes; implies pre mode",
-    )
+    _add_analysis_args(p_scan)
     p_scan.add_argument("--only-actionable", action="store_true")
     p_scan.add_argument("--write", action="store_true", help="write HTML/JSON per fixture")
     p_scan.add_argument("--out-dir", default="out")
@@ -823,7 +812,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_run = sub.add_parser(
         "run",
-        help="import odds, analyze all fixtures, and append actionable bets to CSV",
+        help="import odds, analyze all fixtures, and append triggered bets to CSV",
     )
     run_ids = p_run.add_mutually_exclusive_group(required=True)
     run_ids.add_argument("--fixture-id", type=int, help="single fixture id")
@@ -839,7 +828,7 @@ def build_parser() -> argparse.ArgumentParser:
     run_ids.add_argument(
         "--within-minutes",
         type=int,
-        help="all leagues: matches kicking off within N minutes; insufficient odds are skipped",
+        help="all leagues: matches kicking off within N minutes",
     )
     p_run.add_argument(
         "--leagues",
@@ -851,39 +840,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="disable the hard-coded league whitelist",
     )
     p_run.add_argument("--max-fixtures", type=int)
-    p_run.add_argument(
-        "--min-asian-companies",
-        type=int,
-        default=2,
-        help="within-minutes mode: skip if core Asian companies < N (default 2)",
-    )
-    p_run.add_argument(
-        "--min-eu-companies",
-        type=int,
-        default=2,
-        help="within-minutes mode: skip if EU companies < N (default 2)",
-    )
-    p_run.add_argument("--mode", choices=("auto", "pre", "inplay"), default="auto")
-    p_run.add_argument(
-        "--only-giving",
-        action="store_true",
-        help="only bet the team giving the handicap (side_line < 0)",
-    )
-    p_run.add_argument(
-        "--min-confidence", type=int, help="suppress bets below this confidence"
-    )
-    p_run.add_argument(
-        "--experimental-default",
-        action="store_true",
-        help="Phase 3 gate: --only-giving + --min-confidence 50 + T-60 when no time is given",
-    )
-    run_time = p_run.add_mutually_exclusive_group()
-    run_time.add_argument("--as-of", help="fixed analysis time, YYYY-MM-DD HH:MM[:SS]")
-    run_time.add_argument(
-        "--decision-minutes",
-        type=int,
-        help="per-match analysis time = kickoff - N minutes; implies pre mode",
-    )
+    _add_analysis_args(p_run)
     p_run.add_argument("--out-dir", default="out")
     p_run.add_argument("--json-only", action="store_true")
     p_run.add_argument(
@@ -892,7 +849,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_run.add_argument(
         "--no-track", action="store_true",
-        help="do not append actionable bets to the CSV tracker",
+        help="do not append triggered bets to the CSV tracker",
     )
     p_run.add_argument(
         "--no-report", action="store_true",
@@ -939,15 +896,9 @@ def build_parser() -> argparse.ArgumentParser:
     p_run.add_argument("--save-js", default="data")
     p_run.set_defaults(func=cmd_run)
 
-    p_bt = sub.add_parser("backtest", help="backtest rules against historical scores")
+    p_bt = sub.add_parser("backtest", help="backtest the three strategies")
     p_bt.add_argument("--from", dest="start", help="start date, YYYY-MM-DD")
     p_bt.add_argument("--to", dest="end", help="end date, YYYY-MM-DD")
-    p_bt.add_argument(
-        "--decision-minutes",
-        type=int,
-        default=60,
-        help="analysis time = kickoff - N minutes (default: 60)",
-    )
     p_bt.add_argument(
         "--min-age-hours",
         type=int,
@@ -955,20 +906,15 @@ def build_parser() -> argparse.ArgumentParser:
         help="only matches kicked off at least N hours ago (default: 3)",
     )
     p_bt.add_argument("--limit", type=int, default=500)
-    p_bt.add_argument(
-        "--min-confidence",
-        type=int,
-        default=45,
-        help="only bet when rule confidence >= N (default: 45)",
-    )
     p_bt.add_argument("--league", help="league name substring filter")
     p_bt.add_argument("--fixture-ids", nargs="+", help="optional fixture id filter")
+    _add_analysis_args(p_bt, with_price=False)
     p_bt.add_argument("--out", default="out/backtest.csv")
     p_bt.add_argument("--summary", default="out/backtest_summary.json")
     p_bt.set_defaults(func=cmd_backtest)
 
     p_track = sub.add_parser(
-        "track", help="paper-track actionable experimental-gate bets into CSV"
+        "track", help="paper-track triggered bets into CSV"
     )
     track_ids = p_track.add_mutually_exclusive_group(required=True)
     track_ids.add_argument("--fixture-id", type=int)
@@ -980,15 +926,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_track.add_argument("--all-leagues", action="store_true")
     p_track.add_argument("--max-fixtures", type=int)
     p_track.add_argument("--excel", default=DEFAULT_TRACKER_PATH)
-    track_time = p_track.add_mutually_exclusive_group()
-    track_time.add_argument("--as-of", help="fixed analysis time")
-    track_time.add_argument(
-        "--decision-minutes", type=int, default=60, help="T-N decision time (default 60)"
-    )
-    p_track.add_argument("--min-confidence", type=int, default=50)
-    p_track.add_argument(
-        "--all-sides", action="store_true", help="disable the only-giving gate"
-    )
+    _add_analysis_args(p_track)
     p_track.add_argument("--include-non-actionable", action="store_true")
     p_track.add_argument("--database")
     p_track.add_argument("--openssl-bin")
@@ -1004,15 +942,15 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_wf = sub.add_parser(
         "walkforward",
-        help="Phase 3: monthly walk-forward validation of rule variants",
+        help="monthly stability of each strategy",
     )
-    p_wf.add_argument("--input", help="existing backtest CSV (conf>=45 bets)")
+    p_wf.add_argument("--input", help="existing backtest CSV (bet=1 rows)")
     p_wf.add_argument("--from", dest="start", help="start date, YYYY-MM-DD")
     p_wf.add_argument("--to", dest="end", help="end date, YYYY-MM-DD")
-    p_wf.add_argument("--decision-minutes", type=int, default=60)
     p_wf.add_argument("--min-age-hours", type=int, default=3)
     p_wf.add_argument("--limit", type=int, default=2000)
     p_wf.add_argument("--database", help="override MYSQL_DB")
+    _add_analysis_args(p_wf, with_price=False)
     p_wf.add_argument("--out", default="out/phase3_walkforward.json")
     p_wf.add_argument("--report", default="out/phase3_walkforward.md")
     p_wf.set_defaults(func=cmd_walkforward)

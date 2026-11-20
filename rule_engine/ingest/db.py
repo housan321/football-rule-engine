@@ -30,10 +30,11 @@ from typing import Any, Iterable, Sequence
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 ENV_FILE = PROJECT_ROOT / ".env"
 
-# Asian-handicap whitelist kept in odds_live_all / odds_live_all_raw:
-# Bet365 / 皇冠 / 澳门 / 威廉希尔 / 韦德(Betway) / 平博(Pinnacle).
-# Must match REQUIRED_COMPANIES in scripts/import_titan007.py.
-DEFAULT_COMPANIES: tuple[int, ...] = (2, 3, 7, 9, 11, 22)
+# Asian-handicap companies kept in odds_live_all / odds_live_all_raw.
+# The eight used by 《规则回测分析结果.docx》: Bet365(2), 皇冠(3),
+# 明陞(6), 澳门(7), 易胜博(10), Interwetten(13), 平博(22), 香港马会(23).
+# Must match REQUIRED_COMPANIES in rule_engine/ingest/persist.py.
+DEFAULT_COMPANIES: tuple[int, ...] = (2, 3, 6, 7, 10, 13, 22, 23)
 
 READONLY_KEYWORDS = ("SELECT", "SHOW", "DESC", "DESCRIBE", "EXPLAIN", "WITH")
 

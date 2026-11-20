@@ -1,12 +1,10 @@
 from __future__ import annotations
 
 import csv
-import json
 import tempfile
 import unittest
 from datetime import datetime, timedelta
 from pathlib import Path
-from unittest.mock import patch
 
 from rule_engine import settle
 from rule_engine.tracker import COLUMNS
@@ -63,50 +61,6 @@ class SettleTests(unittest.TestCase):
             )
             ids = settle.pending_fixture_ids(path, now)
             self.assertEqual(ids, [1, 5])
-
-    def test_sync_actionable_json(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            tracking = Path(tmp)
-            tracker = tracking / "paper_tracking.csv"
-            make_tracker(
-                tracker,
-                [
-                    {
-                        "fixture_id": 1,
-                        "analysis_at": "2026-11-08 10:00:00",
-                        "result": "win",
-                        "profit": 0.9,
-                        "clv_line": 0.25,
-                        "clv_water": 0.02,
-                        "clv_favorable": "是",
-                        "updated_at": "2026-11-08 13:00:00",
-                    }
-                ],
-            )
-            json_path = tracking / "actionable_2026-11-08.json"
-            json_path.write_text(
-                json.dumps(
-                    [
-                        {
-                            "fixture_id": 1,
-                            "analysis_at": "2026-11-08 10:00:00",
-                            "result": "",
-                            "profit": "",
-                        }
-                    ],
-                    ensure_ascii=False,
-                ),
-                encoding="utf-8",
-            )
-            with patch.object(settle, "TRACKING_DIR", tracking), patch.object(
-                settle, "TRACKER_PATH", tracker
-            ):
-                changed = settle.sync_actionable_json(datetime(2026, 11, 8, 13, 0))
-            self.assertEqual(changed, 1)
-            data = json.loads(json_path.read_text(encoding="utf-8"))
-            self.assertEqual(data[0]["result"], "win")
-            self.assertEqual(data[0]["profit"], 0.9)
-
 
 if __name__ == "__main__":
     unittest.main()

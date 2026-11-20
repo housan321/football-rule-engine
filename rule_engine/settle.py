@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -13,17 +12,6 @@ from .tracker import read_tracker_rows, update_tracking_results
 TRACKER_PATH = TRACKING_DIR / "paper_tracking.csv"
 MIN_AGE_HOURS = 3
 MAX_AGE_DAYS = 3
-
-
-def _number(value):
-    """Return a float for numeric CSV cells, otherwise the raw string."""
-    text = str(value or "").strip()
-    if not text:
-        return ""
-    try:
-        return float(text)
-    except ValueError:
-        return text
 
 
 def pending_fixture_ids(
@@ -56,49 +44,6 @@ def pending_fixture_ids(
     return ids
 
 
-def sync_actionable_json(now: datetime) -> int:
-    """Copy result/profit/CLV from the CSV tracker into actionable_*.json."""
-    if not TRACKER_PATH.exists():
-        return 0
-    tracker_values = {}
-    for row in read_tracker_rows(TRACKER_PATH):
-        try:
-            fixture_id = int(str(row.get("fixture_id", "")).strip())
-            analysis_at = str(row.get("analysis_at", "")).strip()
-        except (TypeError, ValueError):
-            continue
-        tracker_values[(fixture_id, analysis_at)] = {
-            "result": row.get("result", ""),
-            "profit": _number(row.get("profit")),
-            "clv_line": _number(row.get("clv_line")),
-            "clv_water": _number(row.get("clv_water")),
-            "clv_favorable": row.get("clv_favorable", ""),
-            "updated_at": row.get("updated_at", ""),
-        }
-
-    changed = 0
-    for path in sorted(TRACKING_DIR.glob("actionable_*.json")):
-        try:
-            entries = json.loads(path.read_text(encoding="utf-8"))
-        except Exception:
-            continue
-        dirty = False
-        for entry in entries:
-            key = (entry.get("fixture_id"), entry.get("analysis_at"))
-            values = tracker_values.get(key)
-            if not values or entry.get("result") not in (None, ""):
-                continue
-            entry.update(values)
-            dirty = True
-        if dirty:
-            path.write_text(
-                json.dumps(entries, ensure_ascii=False, indent=2),
-                encoding="utf-8",
-            )
-            changed += 1
-    return changed
-
-
 def run(now: datetime | None = None) -> int:
     now = now or now_local()
     print(f"=== settle {now:%Y-%m-%d %H:%M:%S} Asia/Shanghai ===")
@@ -123,10 +68,8 @@ def run(now: datetime | None = None) -> int:
         updated, skipped, errors = update_tracking_results(conn, TRACKER_PATH)
     finally:
         conn.close()
-    json_files = sync_actionable_json(now)
     print(
-        f"settle: tracker_updated={updated} skipped={skipped} errors={errors} "
-        f"json_files_updated={json_files}"
+        f"settle: tracker_updated={updated} skipped={skipped} errors={errors}"
     )
     return 1 if errors else 0
 

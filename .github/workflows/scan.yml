@@ -56,11 +56,11 @@ jobs:
 
       - name: Run scheduler
         env:
-          # Two decision lanes: 30-60 min before kickoff = T-60, 0-30 min = T-30.
-          # T-30 is skipped when the same fixture already has a T-60 actionable bet.
-          SCHEDULE_ENABLE_T30: "true"
-          SCHEDULE_T30_WINDOW_MINUTES: "30"
-          ANALYSIS_T30_MINUTES: "30"
+          # Three pre-registered windows: conflict T-120m, water T-60m,
+          # conflict T-10m. The cron must run at least every ~10 minutes so the
+          # T-10m window is not missed.
+          SCHEDULE_MIN_ASIAN: "2"
+          SCHEDULE_PRICE: "consensus"
           SMTP_HOST: ${{ secrets.SMTP_HOST }}
           SMTP_PORT: ${{ secrets.SMTP_PORT }}
           SMTP_USER: ${{ secrets.SMTP_USER }}
@@ -79,15 +79,14 @@ jobs:
           path: tracking/paper_tracking.csv
           if-no-files-found: ignore
 
-      - name: Commit schedule cache and results
+      - name: Commit schedule cache and tracker
         if: always()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          # Actions only keeps the schedule cache/state and the CSV tracker.
+          # No actionable_*.json, data/*.js, or out/ HTML/JSON is generated.
           for f in data/schedule_cache.json data/scheduler_state.json tracking/paper_tracking.csv; do
-            [ -e "$f" ] && git add -f "$f"
-          done
-          for f in tracking/actionable_*.json; do
             [ -e "$f" ] && git add -f "$f"
           done
           if git diff --cached --quiet; then

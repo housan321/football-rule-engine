@@ -13,9 +13,12 @@ from .models import (
     SupInfo,
 )
 
-ASIAN_WHITELIST = (2, 3, 7, 9, 11, 22)
+# The eight Asian companies used by 《规则回测分析结果.docx》:
+# Bet365(2), 皇冠(3), 明陞(6), 澳门(7), 易胜博(10), Interwetten(13),
+# 平博(22), 香港马会(23).  The first four are the dense ones.
+ASIAN_WHITELIST = (2, 3, 6, 7, 10, 13, 22, 23)
 EU_WHITELIST = (2, 3, 5, 7, 9, 22)
-CORE_ASIAN = (2, 3, 7, 11)
+CORE_ASIAN = (2, 3, 6, 10)
 
 
 def connect(cfg: DBConfig):
@@ -72,27 +75,23 @@ WHERE b.fixture_id = %s
 
 
 def fetch_asian(
-    conn, fixture_id: int, mode: str, analysis_time: datetime
+    conn, fixture_id: int, cutoff: datetime
 ) -> list[CompanySeries]:
+    """All pre-match main-line quotes with ``change_time <= cutoff``.
+
+    The cut-off is inclusive: a snapshot at exactly T-30m must see quotes
+    stamped T-30m, matching the document's ``cutoff <= T-30m`` definition.
+    """
     placeholders = ",".join(["%s"] * len(ASIAN_WHITELIST))
-    if mode == "inplay":
-        sql = f"""
-SELECT company_id, company_name, change_the_time, home_odds, handicap, away_odds, score, phase
-FROM odds_live_all_raw
-WHERE fixture_id=%s AND phase='inplay' AND line_no=0
+    sql = f"""
+SELECT id, company_id, company_name, change_the_time, home_odds, handicap,
+       away_odds, NULL AS score, phase
+FROM odds_live_all
+WHERE fixture_id=%s AND phase='prematch' AND line_no=0
   AND company_id IN ({placeholders}) AND change_the_time <= %s
-ORDER BY company_id, change_the_time
+ORDER BY company_id, change_the_time, id
 """
-        params = (fixture_id, *ASIAN_WHITELIST, analysis_time)
-    else:
-        sql = f"""
-SELECT company_id, company_name, change_the_time, home_odds, handicap, away_odds, score, phase
-FROM odds_live_all_raw
-WHERE fixture_id=%s AND phase IN ('initial','prematch') AND line_no=0
-  AND company_id IN ({placeholders}) AND change_the_time < %s
-ORDER BY company_id, change_the_time
-"""
-        params = (fixture_id, *ASIAN_WHITELIST, analysis_time)
+    params = (fixture_id, *ASIAN_WHITELIST, cutoff)
 
     with conn.cursor() as cur:
         cur.execute(sql, params)

@@ -1,34 +1,66 @@
+"""Rule engine for the three consensus-snapshot strategies.
+
+The engine is deliberately thin: it builds the two snapshots, evaluates one
+strategy, and exposes the result (direction, bet line, bet water, audit trail).
+There is no score aggregation, no confidence tuning and no other rule set.
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
 
 from .features import (
-    AsianFeatures,
-    EuroFeatures,
-    build_asian_features,
-    build_company_views,
-    build_euro_features,
-    features_snapshot,
+    MIN_SNAPSHOT_COMPANIES,
+    SnapshotDelta,
+    build_consensus_snapshot,
+    build_snapshot_delta,
 )
-from .models import Match, SupInfo
-from .rules import RuleHit, RuleReport, evaluate
+from .models import CompanySeries, Match, SupInfo
+from .rules import PRICE_MODES, StrategySignal, StrategySpec, evaluate_strategy, get_strategy
+
+
+@dataclass
+class RuleHit:
+    code: str
+    name: str
+    direction: str
+    strength: float
+    reason: str
+    category: str
+    evidence: dict = field(default_factory=dict)
 
 
 @dataclass
 class AnalysisResult:
     match: Match
-    mode: str
-    analysis_time: datetime
+    strategy: str
+    strategy_label: str
+    analysis_time: datetime  # decision cut-off
+    prev_time: datetime  # baseline cut-off
     direction: str  # home / away / observe
+    triggered: bool
     confidence: int
     confidence_label: str
     stake: str
-    score_home: float
-    score_away: float
-    conflict_ratio: float
     summary: str
+    reason: str
+    prev_line: Optional[float] = None
+    line: Optional[float] = None
+    line_delta: Optional[float] = None
+    home_water_delta: Optional[float] = None
+    away_water_delta: Optional[float] = None
+    rel_water: Optional[float] = None
+    line_direction: str = "flat"
+    water_direction: str = "flat"
+    price_mode: str = "consensus"
+    water: Optional[float] = None
+    consensus_water: Optional[float] = None
+    best_water: Optional[float] = None
+    best_company: Optional[str] = None
+    companies_prev: int = 0
+    companies_decision: int = 0
     rule_hits: list[RuleHit] = field(default_factory=list)
     conflicts: list[str] = field(default_factory=list)
     invalidation: list[str] = field(default_factory=list)
@@ -37,9 +69,14 @@ class AnalysisResult:
     sup: Optional[SupInfo] = None
     side_line: Optional[float] = None
     is_giving: bool = False
-    experimental_default: bool = False
     actionable: bool = False
+    experimental_default: bool = False
     filter_notes: list[str] = field(default_factory=list)
+
+    @property
+    def mode(self) -> str:
+        """Alias kept for output compatibility: the strategy key."""
+        return self.strategy
 
     @property
     def direction_name(self) -> str:
@@ -49,6 +86,10 @@ class AnalysisResult:
             return self.match.away
         return "观察"
 
+    @property
+    def decision_minutes(self) -> int:
+        return get_strategy(self.strategy).decision_minutes
+
     def to_dict(self) -> dict:
         return {
             "fixture_id": self.match.fixture_id,
@@ -56,22 +97,37 @@ class AnalysisResult:
             "home": self.match.home,
             "away": self.match.away,
             "kickoff": self.match.match_time.isoformat(sep=" "),
+            "strategy": self.strategy,
+            "strategy_label": self.strategy_label,
             "mode": self.mode,
             "analysis_at": self.analysis_time.isoformat(sep=" "),
+            "prev_at": self.prev_time.isoformat(sep=" "),
             "direction": self.direction,
             "direction_name": self.direction_name,
-            "confidence": self.confidence,
-            "confidence_label": self.confidence_label,
+            "triggered": self.triggered,
+            "actionable": self.actionable,
             "stake": self.stake,
             "side_line": self.side_line,
             "is_giving": self.is_giving,
-            "experimental_default": self.experimental_default,
-            "actionable": self.actionable,
-            "filter_notes": self.filter_notes,
-            "score_home": round(self.score_home, 2),
-            "score_away": round(self.score_away, 2),
-            "conflict_ratio": round(self.conflict_ratio, 2),
+            "price_mode": self.price_mode,
+            "water": self.water,
+            "consensus_water": self.consensus_water,
+            "best_water": self.best_water,
+            "best_company": self.best_company,
+            "prev_line": self.prev_line,
+            "line": self.line,
+            "line_delta": self.line_delta,
+            "home_water_delta": self.home_water_delta,
+            "away_water_delta": self.away_water_delta,
+            "rel_water": self.rel_water,
+            "line_direction": self.line_direction,
+            "water_direction": self.water_direction,
+            "companies_prev": self.companies_prev,
+            "companies_decision": self.companies_decision,
+            "confidence": self.confidence,
+            "confidence_label": self.confidence_label,
             "summary": self.summary,
+            "reason": self.reason,
             "conflicts": self.conflicts,
             "invalidation": self.invalidation,
             "data_quality": self.data_quality,
@@ -98,239 +154,205 @@ class AnalysisResult:
         }
 
 
-def _fair_water(line: float, p_home: float, p_draw: float, p_away: float) -> float:
-    """Approximate fair Asian water for a side, from de-margined euro probabilities.
-
-    line is from the bettor side's perspective: negative = gives handicap.
-    """
-    eps = 1e-9
-    if line <= -0.5:
-        return (p_draw + p_away) / max(p_home, eps)
-    if line < -eps:
-        return (p_away + 0.5 * p_draw) / max(p_home, eps)
-    if abs(line) <= eps:
-        return p_away / max(p_home, eps)
-    if line < 0.5:
-        return max((p_away - 0.5 * p_draw) / max(p_home, eps), 0.0)
-    return p_away / max(p_home + p_draw, eps)
+def _hit_code(spec: StrategySpec) -> str:
+    return spec.key.upper()
 
 
-def _confidence_label(confidence: int) -> str:
-    if confidence < 40:
-        return "低"
-    if confidence < 50:
-        return "低-中"
-    return "中低"
+def _make_invalidation(spec: StrategySpec) -> list[str]:
+    return [
+        f"本规则只在 {spec.decision_label} 决策，其他时点不适用",
+        f"{spec.prev_label} / {spec.decision_label} 任一快照少于 "
+        f"{MIN_SNAPSHOT_COMPANIES} 家同盘口公司 → 不视为共识，不触发",
+        "决策后再出现盘口/水位反向变化 → 原信号已过期，不追注",
+        "只比较两个快照的净变化；中间的来回震荡不影响判定",
+    ]
 
 
-def side_line_for(result: AnalysisResult) -> Optional[float]:
-    """Handicap from the bettor side's perspective: negative = giving."""
-    line = float(result.features.get("asian", {}).get("latest_line", 0) or 0)
-    if result.direction == "home":
-        return line
-    if result.direction == "away":
-        return -line
-    return None
-
-
-def apply_action_filters(
-    result: AnalysisResult,
-    only_giving: bool = False,
-    min_confidence: Optional[int] = None,
-) -> AnalysisResult:
-    """Apply the Phase 3 experimental gate without changing direction/confidence.
-
-    - experimental_default is always computed: giving side + conf >= 50.
-    - only_giving suppresses receiving/PK bets.
-    - min_confidence suppresses bets below the threshold.
-    Suppressed bets keep their direction but become "仅观察".
-    """
-    side = side_line_for(result)
-    result.side_line = side
-    result.is_giving = bool(side is not None and side < 0)
-    result.experimental_default = bool(
-        result.direction != "observe"
-        and result.is_giving
-        and result.confidence >= 50
-    )
-
-    actionable = result.direction != "observe" and result.stake == "小注"
-    notes: list[str] = []
-    if actionable and only_giving and not result.is_giving:
-        actionable = False
-        notes.append("非让球方（受让/PK），不符合实验默认")
-    if (
-        actionable
-        and min_confidence is not None
-        and result.confidence < min_confidence
-    ):
-        actionable = False
-        notes.append(f"置信度 {result.confidence} < {min_confidence}")
-
-    result.actionable = actionable
-    result.filter_notes = notes
-    if not actionable and result.stake == "小注":
-        result.stake = "仅观察"
-    return result
-
-
-def _make_invalidation(result: AnalysisResult) -> list[str]:
-    items: list[str] = []
-    if result.direction == "home":
-        items.append(f"若盘口反向退升且{result.match.home}水位回升至 ≥0.95 → 原方向失效")
-        items.append(f"{result.match.away}先进球 → 离场")
-    elif result.direction == "away":
-        items.append(f"若盘口反向退升且{result.match.away}水位回升至 ≥0.95 → 原方向失效")
-        items.append(f"{result.match.home}先进球 → 离场")
-    else:
-        items.append("当前无方向：待盘口/水位形成一致信号后再评估")
-    items.append("数据超过 15 分钟未更新（滚球）→ 失效，需刷新")
-    items.append("澳门与多数公司重新同向且方向反转 → 重新评估")
-    return items
+def _features(
+    spec: StrategySpec,
+    prev_time: datetime,
+    decision_time: datetime,
+    delta: Optional[SnapshotDelta],
+    signal: StrategySignal,
+    price_mode: str,
+) -> dict:
+    decision = delta.decision if delta else None
+    prev = delta.prev if delta else None
+    asian: dict = {
+        "strategy": spec.key,
+        "prev_time": prev_time.isoformat(sep=" "),
+        "decision_time": decision_time.isoformat(sep=" "),
+        "latest_line": decision.line if decision else None,
+        "home_latest_water": decision.home_water if decision else None,
+        "away_latest_water": decision.away_water if decision else None,
+        "line_delta": delta.d_line if delta else None,
+        "rel_water": delta.rel_water if delta else None,
+        "line_direction": delta.line_direction if delta else "flat",
+        "water_direction": delta.water_direction if delta else "flat",
+        "conflict": delta.conflict if delta else False,
+        "prev": prev.to_dict() if prev else None,
+        "decision": decision.to_dict() if decision else None,
+    }
+    return {
+        "strategy": spec.key,
+        "strategy_label": spec.label,
+        "price_mode": price_mode,
+        "conditions": signal.conditions,
+        "triggered": signal.triggered,
+        "direction": signal.direction,
+        "bet_line": signal.bet_line,
+        "consensus_water": signal.consensus_water,
+        "best_water": signal.best_water,
+        "best_company": signal.best_company,
+        "asian": asian,
+    }
 
 
 def analyze(
     match: Match,
-    mode: str,
-    analysis_time: datetime,
-    asian_series,
-    euro_series,
-    sup: SupInfo,
+    strategy: str,
+    asian_series: list[CompanySeries],
+    price: str = "consensus",
+    min_companies: int = MIN_SNAPSHOT_COMPANIES,
 ) -> AnalysisResult:
-    views = build_company_views(asian_series, match.match_time)
-    asian = build_asian_features(views, mode, analysis_time)
-    euro = build_euro_features(euro_series, match.match_time, analysis_time)
-    report: RuleReport = evaluate(match, mode, asian, euro, sup, analysis_time)
+    """Evaluate one strategy for one fixture.
 
-    hits = report.hits
-    home_score = round(sum(h.strength for h in hits if h.direction == "home"), 3)
-    away_score = round(sum(h.strength for h in hits if h.direction == "away"), 3)
-    aligned = len(
-        [
-            h
-            for h in hits
-            if h.direction in ("home", "away") and h.category != "price"
-        ]
+    ``asian_series`` may contain rows after the decision cut-off; snapshots
+    filter by ``change_time <= cutoff``, so no future information is used.
+    """
+    if price not in PRICE_MODES:
+        raise ValueError(f"price 必须是 {PRICE_MODES} 之一，收到 {price!r}")
+    spec = get_strategy(strategy)
+    decision_time = match.match_time - timedelta(minutes=spec.decision_minutes)
+    prev_time = match.match_time - timedelta(minutes=spec.prev_minutes)
+
+    delta = build_snapshot_delta(asian_series, prev_time, decision_time)
+    prev = delta.prev if delta else build_consensus_snapshot(asian_series, prev_time)
+    decision = (
+        delta.decision
+        if delta
+        else build_consensus_snapshot(asian_series, decision_time)
     )
-    net = home_score - away_score
-    conflict = min(home_score, away_score)
-    conflict_ratio = conflict / max(home_score, away_score, 0.1)
+    coverage_ok = bool(
+        prev
+        and decision
+        and prev.companies >= min_companies
+        and decision.companies >= min_companies
+    )
 
-    direction = "observe"
-    if abs(net) >= 1.0 and conflict_ratio < 0.6:
-        direction = "home" if net > 0 else "away"
-
-    # 价格检查：方向侧水位 vs 欧赔去水概率推出的公平水位
-    price_check = None
-    if direction != "observe" and euro.companies >= 2:
-        if direction == "home":
-            side_line = asian.latest_line
-            side_water = asian.home_latest_water
-            fair = _fair_water(
-                side_line, euro.latest_home, euro.latest_draw, euro.latest_away
-            )
-        else:
-            side_line = -asian.latest_line
-            side_water = asian.away_latest_water
-            fair = _fair_water(
-                side_line, euro.latest_away, euro.latest_draw, euro.latest_home
-            )
-        if fair > 0:
-            ratio = side_water / fair
-            price_check = {
-                "side_line": round(side_line, 4),
-                "side_water": round(side_water, 4),
-                "fair_water": round(fair, 4),
-                "ratio": round(ratio, 3),
-            }
-            if ratio < 0.85:
-                report.caps.append((40, "价格已干：方向侧水位显著低于公平水位"))
-                report.conflicts.append(
-                    f"价格已干：水位 {side_water:.2f} vs 公平 {fair:.2f}（{ratio:.0%}）"
-                )
-                hits.append(
-                    RuleHit(
-                        "PRICE_DRY",
-                        "价格检查：水位已干",
-                        direction,
-                        0,
-                        f"方向侧水位 {side_water:.2f}，按欧赔去水公平水位约 {fair:.2f}，追价无边际",
-                        "price",
-                    )
-                )
-            elif ratio < 0.95:
-                report.caps.append((50, "价格偏干：方向侧水位低于公平水位"))
-                hits.append(
-                    RuleHit(
-                        "PRICE_THIN",
-                        "价格检查：水位偏干",
-                        direction,
-                        0,
-                        f"方向侧水位 {side_water:.2f}，公平水位约 {fair:.2f}，边际偏薄",
-                        "price",
-                    )
-                )
-            elif ratio > 1.10:
-                hits.append(
-                    RuleHit(
-                        "PRICE_VALUE",
-                        "价格检查：水位有边际",
-                        direction,
-                        0,
-                        f"方向侧水位 {side_water:.2f}，公平水位约 {fair:.2f}，价格有利",
-                        "price",
-                    )
-                )
-    report.data_quality["price_check"] = price_check
-
-    confidence = 30 + 10 * abs(net) + 4 * aligned
-    cap = 55
-    for value, _reason in report.caps:
-        cap = min(cap, value)
-    if conflict_ratio >= 0.6 and max(home_score, away_score) > 0:
-        cap = min(cap, 40)
-        report.conflicts.append("方向性规则冲突，置信度封顶 40")
-    if direction == "observe":
-        confidence = min(confidence, 40)
-    confidence = int(max(20, min(confidence, cap)))
-    stake = "仅观察" if direction == "observe" or confidence < 45 else "小注"
-
-    top = sorted(
-        [h for h in hits if h.direction != "observe"],
-        key=lambda h: h.strength,
-        reverse=True,
-    )[:3]
-    if top:
-        summary = "；".join(h.name for h in top)
-    elif report.conflicts:
-        summary = "规则冲突：" + "；".join(report.conflicts[:2])
+    if not coverage_ok:
+        signal = StrategySignal(
+            spec=spec,
+            triggered=False,
+            direction="observe",
+            reason=(
+                f"共识公司不足：{spec.prev_label} "
+                f"{prev.companies if prev else 0} 家、{spec.decision_label} "
+                f"{decision.companies if decision else 0} 家"
+                f"（要求 ≥{min_companies} 家同盘口）"
+            ),
+            line_ok=False,
+            water_ok=False,
+            direction_opposite=bool(delta.conflict) if delta else False,
+            conditions={
+                "min_line_move": None,
+                "min_rel_water_move": None,
+                "min_companies": min_companies,
+            },
+        )
     else:
-        summary = "无有效方向信号，仅观察"
+        signal = evaluate_strategy(delta, spec)
 
+    triggered = bool(signal.triggered)
+    direction = signal.direction if triggered else "observe"
+    side_line = None
+    if triggered and signal.bet_line is not None:
+        side_line = (
+            signal.bet_line if direction == "home" else -signal.bet_line
+        )
+    selected_water = (
+        signal.consensus_water if price == "consensus" else signal.best_water
+    )
+    if triggered and selected_water is None:
+        selected_water = signal.consensus_water
+
+    confidence = 100 if triggered else 0
     result = AnalysisResult(
         match=match,
-        mode=mode,
-        analysis_time=analysis_time,
+        strategy=spec.key,
+        strategy_label=spec.label,
+        analysis_time=decision_time,
+        prev_time=prev_time,
         direction=direction,
+        triggered=triggered,
         confidence=confidence,
-        confidence_label=_confidence_label(confidence),
-        stake=stake,
-        score_home=home_score,
-        score_away=away_score,
-        conflict_ratio=conflict_ratio,
-        summary=summary,
-        rule_hits=hits,
-        conflicts=report.conflicts,
-        data_quality=report.data_quality,
-        features=features_snapshot(asian, euro),
-        sup=sup,
+        confidence_label="触发" if triggered else "未触发",
+        stake="1单位" if triggered else "仅观察",
+        summary=signal.reason,
+        reason=signal.reason,
+        prev_line=delta.prev.line if delta else (prev.line if prev else None),
+        line=delta.decision.line if delta else (decision.line if decision else None),
+        line_delta=delta.d_line if delta else None,
+        home_water_delta=delta.d_home_water if delta else None,
+        away_water_delta=delta.d_away_water if delta else None,
+        rel_water=delta.rel_water if delta else None,
+        line_direction=delta.line_direction if delta else "flat",
+        water_direction=delta.water_direction if delta else "flat",
+        price_mode=price,
+        water=selected_water,
+        consensus_water=signal.consensus_water,
+        best_water=signal.best_water,
+        best_company=signal.best_company,
+        companies_prev=prev.companies if prev else 0,
+        companies_decision=decision.companies if decision else 0,
+        rule_hits=[
+            RuleHit(
+                code=_hit_code(spec),
+                name=spec.label,
+                direction=direction,
+                strength=signal.strength,
+                reason=signal.reason,
+                category=spec.kind,
+                evidence={
+                    "line_delta": delta.d_line if delta else None,
+                    "rel_water": delta.rel_water if delta else None,
+                    "line_direction": delta.line_direction if delta else None,
+                    "water_direction": delta.water_direction if delta else None,
+                },
+            )
+        ],
+        conflicts=[],
+        invalidation=_make_invalidation(spec),
+        data_quality={
+            "companies_prev": prev.companies if prev else 0,
+            "companies_decision": decision.companies if decision else 0,
+            "total_companies_prev": prev.total_companies if prev else 0,
+            "total_companies_decision": decision.total_companies if decision else 0,
+            "min_companies": min_companies,
+            "coverage_ok": coverage_ok,
+            "snapshot_prev": prev.to_dict() if prev else None,
+            "snapshot_decision": decision.to_dict() if decision else None,
+        },
+        features=_features(spec, prev_time, decision_time, delta, signal, price),
+        side_line=side_line,
+        is_giving=bool(side_line is not None and side_line < 0),
+        actionable=triggered,
+        experimental_default=triggered,
     )
-    result.invalidation = _make_invalidation(result)
-    apply_action_filters(result)
+    if not triggered:
+        result.stake = "仅观察"
     return result
 
 
-def determine_mode(match: Match, analysis_time: datetime, requested: str = "auto") -> str:
-    if requested in ("pre", "inplay"):
-        return requested
-    return "pre" if analysis_time < match.match_time else "inplay"
+def apply_action_filters(result: AnalysisResult, *args, **kwargs) -> AnalysisResult:
+    """Compatibility shim.
+
+    The new rules are binary and pre-registered: there is no confidence gate and
+    no only-giving filter.  Any legacy arguments are accepted and ignored so old
+    call sites do not silently change the signal.
+    """
+    result.actionable = result.triggered
+    result.experimental_default = result.triggered
+    if not result.actionable:
+        result.stake = "仅观察"
+    return result

@@ -29,23 +29,21 @@ def make_result(fixture_id: int = 1, confidence: int = 50) -> AnalysisResult:
     )
     return AnalysisResult(
         match=match,
-        mode="pre",
+        strategy="water_t60",
+        strategy_label="water T-60m",
         analysis_time=datetime(2026, 11, 7, 11, 0),
+        prev_time=datetime(2026, 11, 7, 10, 0),
         direction="home",
+        triggered=True,
         confidence=confidence,
-        confidence_label="中低",
-        stake="小注",
-        score_home=2.0,
-        score_away=0.0,
-        conflict_ratio=0.0,
+        confidence_label="触发",
+        stake="1单位",
         summary="",
-        features={
-            "asian": {
-                "latest_line": -0.5,
-                "home_latest_water": 0.90,
-                "away_latest_water": 1.00,
-            }
-        },
+        reason="测试触发",
+        line=-0.5,
+        water=0.90,
+        consensus_water=0.90,
+        best_water=0.95,
         side_line=-0.5,
         is_giving=True,
         experimental_default=True,
@@ -69,10 +67,11 @@ class TrackerTests(unittest.TestCase):
         self.assertEqual(row["experimental_default"], "是")
         self.assertAlmostEqual(row["water"], 0.90)
 
-    def test_row_stage_t30(self):
+    def test_row_stage_uses_strategy_decision_window(self):
         result = make_result()
-        result.analysis_time = datetime(2026, 11, 7, 11, 30)
-        self.assertEqual(result_to_tracker_row(result)["stage"], "T-30")
+        result.strategy = "conflict_t10"
+        result.strategy_label = "conflict T-10m"
+        self.assertEqual(result_to_tracker_row(result)["stage"], "T-10")
 
     def test_append_and_update(self):
         with tempfile.TemporaryDirectory() as tmp:

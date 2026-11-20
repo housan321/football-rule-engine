@@ -3,62 +3,89 @@ from __future__ import annotations
 import unittest
 from datetime import datetime, timedelta
 
-from rule_engine.features import build_asian_features, build_company_views
+from rule_engine.features import (
+    build_consensus_snapshot,
+    build_snapshot_delta,
+)
 from rule_engine.models import AsianRow, CompanySeries
 
 KICKOFF = datetime(2026, 11, 5, 20, 15)
 
 
-def make_series(company_id: int, name: str, open_line: float, latest_line: float,
-                open_water: float, latest_water: float) -> CompanySeries:
-    rows = [
-        AsianRow(company_id, name, KICKOFF - timedelta(hours=24), open_water, open_line, 1.0 - open_water),
-        AsianRow(company_id, name, KICKOFF - timedelta(hours=5), (open_water + latest_water) / 2,
-                 (open_line + latest_line) / 2, 1.0 - (open_water + latest_water) / 2),
-        AsianRow(company_id, name, KICKOFF - timedelta(hours=2), latest_water, latest_line, 1.0 - latest_water),
-    ]
+def series(company_id, name, entries):
+    rows = []
+    for minutes, line, home_water, away_water in entries:
+        rows.append(
+            AsianRow(
+                company_id,
+                name,
+                KICKOFF - timedelta(minutes=minutes),
+                home_water,
+                line,
+                away_water,
+            )
+        )
     return CompanySeries(company_id, name, rows)
 
 
-class FeatureTests(unittest.TestCase):
-    def test_retreat_and_water_down(self):
-        series = [
-            make_series(2, "Bet365", -0.5, -0.25, 0.95, 0.85),
-            make_series(3, "皇冠", -0.5, -0.25, 0.94, 0.84),
-            make_series(7, "澳门", -0.5, -0.25, 0.93, 0.83),
-            make_series(11, "韦德", -0.5, -0.25, 0.92, 0.82),
+class SnapshotTests(unittest.TestCase):
+    def test_modal_line_and_average_water(self):
+        companies = [
+            series(2, "Bet365", [(30, -0.5, 0.90, 0.96)]),
+            series(3, "皇冠", [(30, -0.5, 1.00, 0.86)]),
+            series(7, "澳门", [(30, -0.25, 0.80, 1.06)]),
         ]
-        views = build_company_views(series, KICKOFF)
-        feat = build_asian_features(views, "pre", KICKOFF - timedelta(minutes=10))
-        self.assertEqual(feat.coverage, 4)
-        self.assertAlmostEqual(feat.median_line_delta, 0.25, places=3)
-        self.assertEqual(feat.upper_side, "home")
-        self.assertAlmostEqual(feat.retreat, 0.25, places=3)
-        self.assertAlmostEqual(feat.upper_water_delta, -0.10, places=3)
-        self.assertEqual(feat.consensus_direction, "home")
-
-    def test_deepening(self):
-        series = [
-            make_series(2, "Bet365", -0.25, -0.5, 0.90, 0.95),
-            make_series(3, "皇冠", -0.25, -0.5, 0.91, 0.96),
-            make_series(7, "澳门", -0.25, -0.5, 0.92, 0.97),
-        ]
-        feat = build_asian_features(
-            build_company_views(series, KICKOFF), "pre", KICKOFF - timedelta(minutes=10)
+        snapshot = build_consensus_snapshot(
+            companies, KICKOFF - timedelta(minutes=30)
         )
-        self.assertAlmostEqual(feat.deepening, 0.25, places=3)
-        self.assertAlmostEqual(feat.upper_water_delta, 0.05, places=3)
+        self.assertEqual(snapshot.line, -0.5)
+        self.assertEqual(snapshot.companies, 2)
+        self.assertEqual(snapshot.total_companies, 3)
+        self.assertAlmostEqual(snapshot.home_water, 0.95)
+        self.assertAlmostEqual(snapshot.away_water, 0.91)
 
-    def test_n1_stale_is_excluded(self):
-        series = [
-            CompanySeries(
-                9,
-                "威廉希尔",
-                [AsianRow(9, "威廉希尔", KICKOFF - timedelta(days=3), 0.8, -1.0, 1.0)],
-            )
+    def test_cutoff_is_inclusive(self):
+        companies = [series(2, "Bet365", [(30, -0.5, 0.95, 0.90)])]
+        at_cutoff = build_consensus_snapshot(
+            companies, KICKOFF - timedelta(minutes=30)
+        )
+        before = build_consensus_snapshot(
+            companies, KICKOFF - timedelta(minutes=31)
+        )
+        self.assertIsNotNone(at_cutoff)
+        self.assertIsNone(before)
+
+    def test_conflict_delta(self):
+        companies = [
+            series(cid, name, [(30, -0.5, 0.95, 0.90), (10, -0.75, 1.02, 0.82)])
+            for cid, name in [(2, "Bet365"), (3, "皇冠"), (7, "澳门"), (11, "韦德")]
         ]
-        views = build_company_views(series, KICKOFF)
-        self.assertTrue(views[0].excluded)
+        delta = build_snapshot_delta(
+            companies,
+            KICKOFF - timedelta(minutes=30),
+            KICKOFF - timedelta(minutes=10),
+        )
+        self.assertAlmostEqual(delta.d_line, -0.25)
+        self.assertAlmostEqual(delta.rel_water, 0.15)
+        self.assertEqual(delta.line_direction, "home")
+        self.assertEqual(delta.water_direction, "away")
+        self.assertTrue(delta.conflict)
+
+    def test_water_only_delta_is_not_conflict(self):
+        companies = [
+            series(cid, name, [(120, -0.5, 0.95, 0.90), (60, -0.5, 1.01, 0.84)])
+            for cid, name in [(2, "Bet365"), (3, "皇冠")]
+        ]
+        delta = build_snapshot_delta(
+            companies,
+            KICKOFF - timedelta(minutes=120),
+            KICKOFF - timedelta(minutes=60),
+        )
+        self.assertAlmostEqual(delta.d_line, 0.0)
+        self.assertAlmostEqual(delta.rel_water, 0.12)
+        self.assertEqual(delta.line_direction, "flat")
+        self.assertEqual(delta.water_direction, "away")
+        self.assertFalse(delta.conflict)
 
 
 if __name__ == "__main__":

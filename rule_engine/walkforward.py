@@ -1,24 +1,18 @@
+"""Monthly stability reports for the three strategies.
+
+There is no parameter selection here: the strategies are pre-registered, so
+the useful check is whether each one keeps its sign month by month.
+"""
+
 from __future__ import annotations
 
 import csv
 import json
-from collections import Counter, defaultdict
+from collections import Counter
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Optional
 
-VARIANT_DEFS: dict[str, Callable[[dict], bool]] = {
-    "conf45_all": lambda r: int(r["confidence"]) >= 45,
-    "conf50_all": lambda r: int(r["confidence"]) >= 50,
-    "conf45_giving": lambda r: int(r["confidence"]) >= 45
-    and float(r["side_line"]) < 0,
-    "conf50_giving": lambda r: int(r["confidence"]) >= 50
-    and float(r["side_line"]) < 0,
-    "conf50_receiving": lambda r: int(r["confidence"]) >= 50
-    and float(r["side_line"]) >= 0,
-}
-
-SELECTION_CANDIDATES = ("conf50_all", "conf50_giving", "conf45_giving")
-DEFAULT_VARIANT = "conf50_all"
+from .rules import STRATEGIES
 
 
 def load_csv(path: str | Path) -> list[dict]:
@@ -27,12 +21,20 @@ def load_csv(path: str | Path) -> list[dict]:
     return [r for r in rows if str(r.get("bet", "0")) == "1"]
 
 
+def _profit(row: dict) -> float:
+    for key in ("profit_consensus", "profit"):
+        value = row.get(key)
+        if value not in (None, ""):
+            return float(value)
+    return 0.0
+
+
 def _stats(rows: list[dict]) -> dict:
-    outcomes = Counter(r["outcome"] for r in rows)
+    outcomes = Counter(r.get("outcome", "") for r in rows)
     wins = outcomes["win"] + outcomes["half_win"]
     losses = outcomes["loss"] + outcomes["half_loss"]
     pushes = outcomes["push"]
-    profit = sum(float(r["profit"]) for r in rows)
+    profit = sum(_profit(r) for r in rows)
     n = len(rows)
     return {
         "n": n,
@@ -45,13 +47,24 @@ def _stats(rows: list[dict]) -> dict:
     }
 
 
+def _strategy_of(row: dict) -> Optional[str]:
+    value = str(row.get("strategy", "")).strip()
+    return value or None
+
+
 def monthly_variant_table(rows: list[dict]) -> dict:
-    months = sorted({r["match_time"][:7] for r in rows})
+    months = sorted({str(r.get("match_time", ""))[:7] for r in rows})
+    keys = sorted({_strategy_of(r) for r in rows if _strategy_of(r)})
     table: dict[str, dict] = {}
-    for variant, predicate in VARIANT_DEFS.items():
-        table[variant] = {
+    for key in keys:
+        table[key] = {
             month: _stats(
-                [r for r in rows if r["match_time"][:7] == month and predicate(r)]
+                [
+                    r
+                    for r in rows
+                    if str(r.get("match_time", ""))[:7] == month
+                    and _strategy_of(r) == key
+                ]
             )
             for month in months
         }
@@ -59,54 +72,26 @@ def monthly_variant_table(rows: list[dict]) -> dict:
 
 
 def walk_forward(rows: list[dict]) -> dict:
-    months = sorted({r["match_time"][:7] for r in rows})
-    train: list[dict] = []
-    stitched: list[dict] = []
-    steps: list[dict] = []
-
+    months = sorted({str(r.get("match_time", ""))[:7] for r in rows})
+    keys = sorted({_strategy_of(r) for r in rows if _strategy_of(r)})
+    steps = []
     for month in months:
-        scores: dict[str, Optional[float]] = {}
-        if not train:
-            chosen = DEFAULT_VARIANT
-            reason = "首个测试月，使用默认基线 conf50_all"
-        else:
-            for variant in SELECTION_CANDIDATES:
-                stats = _stats([r for r in train if VARIANT_DEFS[variant](r)])
-                scores[variant] = stats["roi"]
-            chosen = max(
-                SELECTION_CANDIDATES,
-                key=lambda v: scores[v] if scores[v] is not None else -9,
-            )
-            reason = "选择训练期累计 ROI 最高的变体"
-
-        test_rows = [
-            r
-            for r in rows
-            if r["match_time"][:7] == month and VARIANT_DEFS[chosen](r)
-        ]
-        test_stats = _stats(test_rows)
+        month_rows = [r for r in rows if str(r.get("match_time", ""))[:7] == month]
         steps.append(
             {
                 "month": month,
-                "chosen": chosen,
-                "reason": reason,
-                "train_scores": {
-                    k: (round(v, 4) if v is not None else None)
-                    for k, v in scores.items()
+                "strategies": {
+                    key: _stats(
+                        [r for r in month_rows if _strategy_of(r) == key]
+                    )
+                    for key in keys
                 },
-                "test": test_stats,
             }
         )
-        stitched.extend(test_rows)
-        # Training always uses all bets of the completed month, not only the
-        # selected variant, so the next selection sees the full history.
-        train.extend([r for r in rows if r["match_time"][:7] == month])
-
-    return {
-        "months": months,
-        "steps": steps,
-        "stitched": _stats(stitched),
+    stitched = {
+        key: _stats([r for r in rows if _strategy_of(r) == key]) for key in keys
     }
+    return {"months": months, "steps": steps, "stitched": stitched}
 
 
 def build_summary(rows: list[dict], source: str = "") -> dict:
@@ -119,10 +104,9 @@ def build_summary(rows: list[dict], source: str = "") -> dict:
         "monthly_variants": monthly["variants"],
         "walk_forward": wf,
         "notes": [
-            "变体筛选只用测试月之前的月份，避免未来函数。",
-            "候选变体在看过全样本后提出，因此仍存在规则选择偏差。",
-            "平注 1 单位，未计滑点/交易量；结算按 90 分钟比分。",
-            "受让方/PK 是控制组，不参与 walk-forward 选择。",
+            "策略是预注册的，不做参数选择；这里只看月度方向是否稳定。",
+            "ROI=利润/注数（1 单位平注），使用 consensus 价。",
+            "平注、无滑点/交易量；结算按 90 分钟比分。",
         ],
     }
 
@@ -142,33 +126,31 @@ def _rate(value: Optional[float]) -> str:
     return "-" if value is None else f"{value * 100:.1f}%"
 
 
+def _label(key: str) -> str:
+    spec = STRATEGIES.get(key)
+    return spec.label if spec else key
+
+
 def print_summary(summary: dict) -> None:
     print(f"Source: {summary['source']} | bets: {summary['total_bets']}")
-    print("\nMonthly variants")
-    months = summary["months"]
-    for variant, data in summary["monthly_variants"].items():
+    print("\nMonthly by strategy")
+    for key, data in summary["monthly_variants"].items():
         parts = []
-        for month in months:
+        for month in summary["months"]:
             s = data[month]
-            parts.append(f"{month}: n={s['n']} hit={_rate(s['hit_rate'])} roi={_pct(s['roi'])}")
-        print(f"  {variant:<18} " + " | ".join(parts))
+            parts.append(
+                f"{month}: n={s['n']} hit={_rate(s['hit_rate'])} "
+                f"roi={_pct(s['roi'])}"
+            )
+        print(f"  {_label(key):<18} " + " | ".join(parts))
 
-    print("\nWalk-forward")
-    for step in summary["walk_forward"]["steps"]:
-        s = step["test"]
-        scores = ", ".join(
-            f"{k}={_pct(v)}" for k, v in step["train_scores"].items()
-        )
+    print("\nOverall")
+    for key, stats in summary["walk_forward"]["stitched"].items():
         print(
-            f"  {step['month']} -> {step['chosen']:<14} "
-            f"test n={s['n']} hit={_rate(s['hit_rate'])} roi={_pct(s['roi'])} "
-            f"profit={s['profit']:+.2f}  [train: {scores or 'default'}]"
+            f"  {_label(key):<18} n={stats['n']} "
+            f"hit={_rate(stats['hit_rate'])} "
+            f"profit={stats['profit']:+.2f} roi={_pct(stats['roi'])}"
         )
-    st = summary["walk_forward"]["stitched"]
-    print(
-        f"\nStitched: n={st['n']} hit={_rate(st['hit_rate'])} "
-        f"profit={st['profit']:+.2f} roi={_pct(st['roi'])}"
-    )
 
 
 def write_markdown(summary: dict, path: str | Path) -> Path:
@@ -176,53 +158,37 @@ def write_markdown(summary: dict, path: str | Path) -> Path:
     out.parent.mkdir(parents=True, exist_ok=True)
     months = summary["months"]
     lines = [
-        "# Phase 3 · Walk-forward 样本外验证",
+        "# 三策略月度稳定性",
         "",
         f"- 输入：`{summary['source']}`",
         f"- 下注数：{summary['total_bets']}",
-        f"- 月份：{'、'.join(months)}",
+        f"- 月份：{'、'.join(months) or '-'}",
         "",
-        "## 1. 各变体月度表现",
+        "## 月度表现（consensus 价）",
         "",
-        "| 变体 | " + " | ".join(months) + " |",
+        "| 策略 | " + " | ".join(months) + " |",
         "|---|" + "---|" * len(months),
     ]
-    for variant, data in summary["monthly_variants"].items():
+    labels = {key: _label(key) for key in summary["monthly_variants"]}
+    for key, data in summary["monthly_variants"].items():
         cells = []
         for month in months:
             s = data[month]
             cells.append(
                 f"n={s['n']} 命中 {_rate(s['hit_rate'])} ROI {_pct(s['roi'])}"
             )
-        lines.append(f"| {variant} | " + " | ".join(cells) + " |")
+        lines.append(f"| {labels[key]} | " + " | ".join(cells) + " |")
 
-    lines += [
-        "",
-        "## 2. Walk-forward 选择路径",
-        "",
-        "| 测试月 | 选择变体 | 训练期得分 | 测试 n | 测试命中 | 测试 ROI | 测试利润 |",
-        "|---|---|---|---:|---:|---:|---:|",
-    ]
-    for step in summary["walk_forward"]["steps"]:
-        s = step["test"]
-        scores = ", ".join(f"{k}={_pct(v)}" for k, v in step["train_scores"].items())
+    lines += ["", "## 全样本", "", "| 策略 | 注数 | 命中 | 利润 | ROI |", "|---|---:|---:|---:|---:|"]
+    for key, stats in summary["walk_forward"]["stitched"].items():
         lines.append(
-            f"| {step['month']} | {step['chosen']} | {scores or '默认'} | "
-            f"{s['n']} | {_rate(s['hit_rate'])} | {_pct(s['roi'])} | {s['profit']:+.2f} |"
+            f"| {_label(key)} | {stats['n']} | {_rate(stats['hit_rate'])} | "
+            f"{stats['profit']:+.2f} | {_pct(stats['roi'])} |"
         )
-    st = summary["walk_forward"]["stitched"]
-    lines += [
-        "",
-        f"**拼接结果：** n={st['n']}，命中 {_rate(st['hit_rate'])}，"
-        f"利润 {st['profit']:+.2f}，ROI {_pct(st['roi'])}。",
-        "",
-        "## 3. 结论与限制",
-        "",
-        "- `conf50_giving` / `conf45_giving` 在样本各月均为正，`conf50_receiving` 各月均为负。",
-        "- Walk-forward 选择只用测试月之前的月份，避免了直接未来函数。",
-        "- 但候选变体是看过全样本后提出的，仍存在规则选择偏差；这不是完全独立的样本外验证。",
-        "- 平注、无滑点/交易量，结算按 90 分钟比分。",
-        "",
-    ]
+
+    lines += ["", "## 说明", ""]
+    for note in summary["notes"]:
+        lines.append(f"- {note}")
+    lines.append("")
     out.write_text("\n".join(lines), encoding="utf-8")
     return out
