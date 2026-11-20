@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import contextlib
+import io
 import json
 import tempfile
 import unittest
@@ -10,6 +12,7 @@ from unittest.mock import MagicMock, patch
 
 from rule_engine import scheduler
 from rule_engine.scheduler import (
+    _match_label,
     _seed_recent_tracker_state,
     collect_schedule,
     due_pairs,
@@ -115,10 +118,30 @@ class SchedulerTests(unittest.TestCase):
         self.assertEqual(state["done"]["water_t60"], [20])
         self.assertNotIn("removed_t30", state["done"])
 
+    def test_match_label(self):
+        self.assertEqual(
+            _match_label(
+                {
+                    "league": "澳超",
+                    "home": "麦克阿瑟FC",
+                    "away": "布里斯班狮吼",
+                }
+            ),
+            "澳超 麦克阿瑟FC vs 布里斯班狮吼",
+        )
+        self.assertEqual(_match_label({"league_id": 6}), "league=6")
+
     def test_run_once_marks_coverage_and_saves(self):
         now = datetime(2026, 11, 8, 11, 50)
         matches = [
-            {"fixture_id": 1, "kickoff": "2026-11-08 12:00", "league_id": 1}
+            {
+                "fixture_id": 1,
+                "kickoff": "2026-11-08 12:00",
+                "league_id": 1,
+                "league": "澳超",
+                "home": "麦克阿瑟FC",
+                "away": "布里斯班狮吼",
+            }
         ]
         state = {"date": "2026-11-08", "done": {}}
         result = SimpleNamespace(
@@ -129,7 +152,10 @@ class SchedulerTests(unittest.TestCase):
             data_quality={"coverage_ok": True},
         )
         conn = MagicMock()
-        with patch.object(scheduler, "load_state", return_value=state), patch.object(
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf), patch.object(
+            scheduler, "load_state", return_value=state
+        ), patch.object(
             scheduler,
             "load_or_refresh_schedule",
             return_value=(matches, False),
@@ -155,6 +181,11 @@ class SchedulerTests(unittest.TestCase):
         self.assertIn(1, state["done"]["conflict_t10"])
         save.assert_called_once()
         conn.close.assert_called_once()
+        output = buf.getvalue()
+        self.assertIn("[conflict_t10] 1  澳超 麦克阿瑟FC vs 布里斯班狮吼", output)
+        self.assertIn(
+            "[conflict T-10m] 1 澳超 麦克阿瑟FC vs 布里斯班狮吼 -> 观察", output
+        )
 
     def test_run_once_writes_csv_and_sends_email(self):
         now = datetime(2026, 11, 8, 11, 50)

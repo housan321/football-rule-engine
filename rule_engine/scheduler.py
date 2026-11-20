@@ -286,6 +286,19 @@ def due_pairs(
     return out
 
 
+def _match_label(item: dict) -> str:
+    """Human-readable 'league home vs away' for logs."""
+    league = str(item.get("league") or "").strip()
+    home = str(item.get("home") or "").strip()
+    away = str(item.get("away") or "").strip()
+    teams = f"{home} vs {away}" if home and away else (home or away)
+    label = " ".join(part for part in (league, teams) if part)
+    if label:
+        return label
+    league_id = item.get("league_id")
+    return f"league={league_id}" if league_id is not None else ""
+
+
 def run_once(now: datetime) -> int:
     state = load_state(now)
     matches, refreshed = load_or_refresh_schedule(now)
@@ -302,7 +315,7 @@ def run_once(now: datetime) -> int:
     for item in due:
         print(
             f"  [{item['strategy']}] {item['fixture_id']}  "
-            f"league={item['league_id']}  kickoff={item['kickoff']}  "
+            f"{_match_label(item)}  kickoff={item['kickoff']}  "
             f"{item['minutes_to_kickoff']:.0f}min"
         )
 
@@ -343,7 +356,8 @@ def run_once(now: datetime) -> int:
                     skipped += 1
                 results.append(result)
                 print(
-                    f"  [{item['strategy_label']}] {fixture_id} -> "
+                    f"  [{item['strategy_label']}] {fixture_id} "
+                    f"{_match_label(item)} -> "
                     f"{result.direction_name} "
                     f"{'触发' if result.triggered else '未触发'} "
                     f"{result.stake}"
