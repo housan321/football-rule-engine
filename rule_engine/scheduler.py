@@ -254,7 +254,13 @@ def due_pairs(
     now: datetime,
     strategies: list[StrategySpec] | None = None,
 ) -> list[dict]:
-    """(fixture, strategy) pairs whose decision window has been reached."""
+    """(fixture, strategy) pairs whose decision window has been reached.
+
+    Once a window starts (``kickoff - decision_minutes``), the pair stays due
+    until it is recorded in ``done`` or the match kicks off.  A pair that
+    failed or was missed inside the window is therefore retried as a
+    catch-up; snapshots are anchored to kickoff, so the result is identical.
+    """
     specs = strategies or list(STRATEGIES.values())
     done = state.get("done", {})
     out: list[dict] = []
@@ -268,12 +274,12 @@ def due_pairs(
         if minutes <= 0 or minutes > MAX_DECISION_MINUTES:
             continue
         for spec in specs:
-            # Only fire inside [decision - grace, decision]; never early.
-            lower = max(0.0, spec.decision_minutes - GRACE_MINUTES)
-            if minutes < lower or minutes > spec.decision_minutes:
+            # Only fire after the decision window has been reached; never early.
+            if minutes > spec.decision_minutes:
                 continue
             if fixture_id in set(done.get(spec.key, [])):
                 continue
+            lower = max(0.0, spec.decision_minutes - GRACE_MINUTES)
             out.append(
                 {
                     **match,
@@ -281,6 +287,7 @@ def due_pairs(
                     "strategy_label": spec.label,
                     "decision_minutes": spec.decision_minutes,
                     "minutes_to_kickoff": minutes,
+                    "catch_up": minutes < lower,
                 }
             )
     return out
@@ -317,6 +324,7 @@ def run_once(now: datetime) -> int:
             f"  [{item['strategy']}] {item['fixture_id']}  "
             f"{_match_label(item)}  kickoff={item['kickoff']}  "
             f"{item['minutes_to_kickoff']:.0f}min"
+            + ("  (catch-up)" if item.get("catch_up") else "")
         )
 
     fixture_ids = sorted({int(item["fixture_id"]) for item in due})
@@ -361,6 +369,7 @@ def run_once(now: datetime) -> int:
                     f"{result.direction_name} "
                     f"{'触发' if result.triggered else '未触发'} "
                     f"{result.stake}"
+                    + ("  (catch-up)" if item.get("catch_up") else "")
                 )
             except Exception as exc:  # noqa: BLE001 - retry next run
                 print(f"  [{item['strategy_label']}] {fixture_id} -> error: {exc}")

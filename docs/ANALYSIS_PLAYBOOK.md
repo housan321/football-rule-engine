@@ -617,9 +617,9 @@ python -m rule_engine track-update --excel tracking/paper_tracking.csv
    - `conflict_t120`：距开赛 105–120 分钟（盘口与水位方向冲突）；
    - `water_t60`：距开赛 45–60 分钟（水位单边移动）；
    - `conflict_t10`：距开赛 0–10 分钟（收盘前冲突）；
-   - 窗口下界 = 决策时点 − `SCHEDULE_GRACE_MINUTES`（默认 15），只在窗口内补跑，不会提前；
+   - 窗口从决策时点开始，之后每一轮都算到期，直到写进 `done` 或开赛，不会提前；`SCHEDULE_GRACE_MINUTES`（默认 15）只用于区分正常窗口与 `(catch-up)` 标记；
 5. 只导入本轮 due 场次的赔率，按 `SCHEDULE_MIN_ASIAN`（默认 2）家公司覆盖率与 `SCHEDULE_PRICE`（默认 `consensus`）分析；
-6. 数据覆盖不足、抓取失败或分析异常的场次不记为已处理，下一轮继续重试，直到窗口关闭；
+6. 数据覆盖不足、抓取失败或分析异常的场次不记为已处理，下一轮继续重试，直到开赛（日志标记 `(catch-up)`）；
 7. 有 `actionable=是` 时写 `tracking/paper_tracking.csv`，邮件只发本轮新增 actionable（附件只含本轮注单）；
 8. 更新 `data/scheduler_state.json` 去重：只保留 `date` + `done`（按策略记录当天已成功分析的 fixture_id，无论是否触发），日期翻转后重置；启动时从 `paper_tracking.csv` 最近 2 小时已触发注单恢复 `done`，避免重启/跨午夜后重复分析或重复下注；
 9. 把 `data/` 与 `tracking/` 的结果提交回仓库（需要 `contents: write`）。
@@ -636,7 +636,7 @@ python -m rule_engine track-update --excel tracking/paper_tracking.csv
 >
 > `data/scheduler_state.json` 只记录 `date` 和 `done`；旧版的 `analyzed` / `t30_analyzed` / `t60_actionable` 已移除。
 >
-> 三条策略依赖约 10 分钟一次的触发；延迟超过 `SCHEDULE_GRACE_MINUTES` 会漏掉该决策点。
+> 需约 10 分钟一次的触发：`conflict_t10` 没有补跑空间；T-120 / T-60 漏跑或失败会在后续轮次 `(catch-up)`。
 
 需要配置的 GitHub Secrets：
 

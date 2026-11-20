@@ -52,23 +52,40 @@ class SchedulerTests(unittest.TestCase):
             {"fixture_id": 3, "kickoff": "2026-11-08 10:10"},  # 10 min
             {"fixture_id": 4, "kickoff": "2026-11-08 12:10"},  # 130 min
             {"fixture_id": 5, "kickoff": "2026-11-08 09:50"},  # started
+            {"fixture_id": 6, "kickoff": "2026-11-08 11:40"},  # 100 min, missed
         ]
         pairs = due_pairs(matches, {"done": {}}, now)
-        got = {(p["fixture_id"], p["strategy"]) for p in pairs}
-        self.assertEqual({s for fid, s in got if fid == 1}, {"conflict_t120"})
-        self.assertEqual({s for fid, s in got if fid == 2}, {"water_t60"})
-        self.assertEqual({s for fid, s in got if fid == 3}, {"conflict_t10"})
-        self.assertFalse(any(fid == 4 for fid, _ in got))
-        self.assertFalse(any(fid == 5 for fid, _ in got))
+        by_fixture: dict[int, dict] = {}
+        for pair in pairs:
+            by_fixture.setdefault(pair["fixture_id"], {})[pair["strategy"]] = pair[
+                "catch_up"
+            ]
+        self.assertEqual(by_fixture[1], {"conflict_t120": False})
+        self.assertEqual(by_fixture[2], {"water_t60": False, "conflict_t120": True})
+        self.assertEqual(
+            by_fixture[3],
+            {"conflict_t10": False, "water_t60": True, "conflict_t120": True},
+        )
+        self.assertNotIn(4, by_fixture)  # window not reached yet
+        self.assertNotIn(5, by_fixture)  # already started
+        self.assertEqual(by_fixture[6], {"conflict_t120": True})  # catch-up
 
     def test_due_pairs_respects_done(self):
         now = datetime(2026, 11, 8, 10, 0)
         matches = [{"fixture_id": 1, "kickoff": "2026-11-08 11:00"}]  # 60 min
-        state = {"done": {"conflict_t10": [], "conflict_t120": [], "water_t60": [1]}}
+        state = {
+            "done": {
+                "conflict_t10": [],
+                "conflict_t120": [1],
+                "water_t60": [1],
+            }
+        }
         pairs = due_pairs(matches, state, now)
         self.assertEqual(pairs, [])
         pairs = due_pairs(matches, {"done": {}}, now)
-        self.assertEqual({p["strategy"] for p in pairs}, {"water_t60"})
+        self.assertEqual(
+            {p["strategy"] for p in pairs}, {"water_t60", "conflict_t120"}
+        )
 
     def test_seed_recent_tracker_state(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -175,10 +192,11 @@ class SchedulerTests(unittest.TestCase):
             scheduler, "analyze", return_value=result
         ) as analyze:
             rc = scheduler.run_once(now)
-        self.assertEqual(rc, 1)  # only the T-10m window is inside the grace band
+        self.assertEqual(rc, 3)  # T-10 window + T-60/T-120 catch-ups
         ingest.assert_called_once()
-        self.assertEqual(analyze.call_count, 1)
-        self.assertIn(1, state["done"]["conflict_t10"])
+        self.assertEqual(analyze.call_count, 3)
+        for key in ("conflict_t10", "conflict_t120", "water_t60"):
+            self.assertIn(1, state["done"][key])
         save.assert_called_once()
         conn.close.assert_called_once()
         output = buf.getvalue()
@@ -186,6 +204,7 @@ class SchedulerTests(unittest.TestCase):
         self.assertIn(
             "[conflict T-10m] 1 澳超 麦克阿瑟FC vs 布里斯班狮吼 -> 观察", output
         )
+        self.assertIn("(catch-up)", output)
 
     def test_run_once_writes_csv_and_sends_email(self):
         now = datetime(2026, 11, 8, 11, 50)
@@ -250,7 +269,7 @@ class SchedulerTests(unittest.TestCase):
             scheduler, "send_actionable_email", return_value=1
         ) as send:
             rc = scheduler.run_once(now)
-        self.assertEqual(rc, 1)
+        self.assertEqual(rc, 3)  # T-10 window + T-60/T-120 catch-ups
         append.assert_called_once()
         send.assert_called_once()
         self.assertFalse(hasattr(scheduler, "append_actionable_json"))
