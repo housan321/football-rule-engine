@@ -267,7 +267,7 @@ python -m rule_engine import --help
 ```
 
 写入：`match_list_all`、`odds_live_all`、`odds_live_all_raw`、`odds_history_eu`、`data_import_log`。
-要求 `pymysql`、系统 `openssl`（或 `--openssl-bin` / `OPENSSL_BIN`）、根目录 `.env`。
+要求 `pymysql`、系统 `openssl`（1.1.1；3.x 的 TLS 指纹会被 titan007 断开，或 `--openssl-bin` / `OPENSSL_BIN` 指向 1.1.1 客户端）、根目录 `.env`。
 
 ## 数据范围
 
@@ -304,6 +304,9 @@ python -m rule_engine run --within-minutes 120 --all-leagues
 
 - 由 cron-job.org 通过 `workflow_dispatch` 触发；**建议每 10 分钟一次**（T-10m 需要）
 - job 内启动临时 MySQL 8 service container
+- 抓取/调度在 `.github/docker/crawler.Dockerfile`（OpenSSL 1.1.1）容器里执行：
+  titan007 按 TLS 指纹直接断开 OpenSSL 3.x 客户端（表现为 `unexpected eof`），
+  `ubuntu-latest` 自带的 OpenSSL 3.x 会导致所有 VIP 页抓取失败
 - `python -m rule_engine.init_db` 初始化 `sql/schema.sql`
 - `python -m rule_engine.scheduler`
 - 提交 `data/schedule_cache.json`、`data/scheduler_state.json`、`tracking/paper_tracking.csv`

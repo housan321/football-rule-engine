@@ -74,7 +74,32 @@ def find_openssl(explicit=None):
             "openssl not found; install OpenSSL or set OPENSSL_BIN, "
             "or use the browser-export + scripts/import_titan007.py fallback"
         )
+    _check_openssl_version(candidate)
     return candidate
+
+
+def _check_openssl_version(openssl):
+    """Warn when the client is OpenSSL 3.x: titan007 drops that TLS fingerprint."""
+    try:
+        proc = subprocess.run(
+            [openssl, "version"], capture_output=True, timeout=10, text=True
+        )
+    except Exception:  # noqa: BLE001 - the probe must never break the fetch
+        return
+    version = proc.stdout.strip()
+    if not version:
+        return
+    match = re.search(r"OpenSSL (\d+)\.(\d+)", version)
+    if match and (int(match.group(1)), int(match.group(2))) >= (3, 0):
+        logger.warning(
+            "%s uses %s; titan007 closes OpenSSL 3.x TLS connections "
+            "(empty response / unexpected eof). Use an OpenSSL 1.1.1 client "
+            "or set OPENSSL_BIN to one.",
+            openssl,
+            version,
+        )
+    else:
+        logger.debug("using %s (%s)", openssl, version)
 
 
 def _dechunk(data: bytes) -> bytes:

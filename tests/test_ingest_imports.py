@@ -68,6 +68,32 @@ class IngestImportTests(unittest.TestCase):
             datetime(2027, 1, 1, 0, 0),
         )
 
+    def test_openssl3_client_is_flagged(self):
+        from unittest.mock import patch
+
+        from rule_engine.ingest import crawl
+
+        class _Proc:
+            stdout = "OpenSSL 3.0.13 30 Jan 2024 (Library: OpenSSL 3.0.13)\n"
+
+        with patch.object(crawl.subprocess, "run", return_value=_Proc()):
+            with self.assertLogs("titan007.openssl", level="WARNING") as logs:
+                crawl._check_openssl_version("openssl")
+        self.assertIn("OpenSSL 3.x", "\n".join(logs.output))
+
+    def test_openssl11_client_is_not_flagged(self):
+        from unittest.mock import patch
+
+        from rule_engine.ingest import crawl
+
+        class _Proc:
+            stdout = "OpenSSL 1.1.1w  11 Sep 2023\n"
+
+        with patch.object(crawl.subprocess, "run", return_value=_Proc()):
+            with self.assertLogs("titan007.openssl", level="DEBUG") as logs:
+                crawl._check_openssl_version("openssl")
+        self.assertNotIn("WARNING", "\n".join(logs.output))
+
 
 if __name__ == "__main__":
     unittest.main()

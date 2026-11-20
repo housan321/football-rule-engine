@@ -37,13 +37,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install dependencies
-        run: python -m pip install -r requirements.txt
-
       - name: Write .env
         env:
           MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
@@ -51,8 +44,22 @@ jobs:
           printf 'MYSQL_HOST=127.0.0.1\nMYSQL_PORT=3306\nMYSQL_USER=root\nMYSQL_PASSWORD=%s\nMYSQL_DB=football\n' \
             "$MYSQL_ROOT_PASSWORD" > .env
 
+      # titan007 closes OpenSSL 3.x TLS connections ("unexpected eof"), and
+      # ubuntu-latest ships OpenSSL 3.x. Run the Python stack in an image that
+      # provides OpenSSL 1.1.1. --network host lets the containers reach the
+      # MySQL service published on the runner at 127.0.0.1:3306.
+      - name: Build crawler image (OpenSSL 1.1.1)
+        run: |
+          docker build -t titan-crawler -f .github/docker/crawler.Dockerfile .
+          docker run --rm titan-crawler openssl version
+          docker run --rm titan-crawler sh -c 'openssl version | grep -q "^OpenSSL 1\.1\.1"'
+
       - name: Init schema
-        run: python -m rule_engine.init_db
+        run: |
+          docker run --rm --network host \
+            -v "$GITHUB_WORKSPACE:/app" -w /app \
+            -e TZ \
+            titan-crawler python -m rule_engine.init_db
 
       - name: Run scheduler
         env:
@@ -69,7 +76,13 @@ jobs:
           SMTP_TLS: ${{ secrets.SMTP_TLS }}
           MAIL_FROM: ${{ secrets.MAIL_FROM }}
           MAIL_TO: ${{ secrets.MAIL_TO }}
-        run: python -m rule_engine.scheduler
+        run: |
+          docker run --rm --network host \
+            -v "$GITHUB_WORKSPACE:/app" -w /app \
+            -e TZ -e SCHEDULE_MIN_ASIAN -e SCHEDULE_PRICE \
+            -e SMTP_HOST -e SMTP_PORT -e SMTP_USER -e SMTP_PASSWORD \
+            -e SMTP_SSL -e SMTP_TLS -e MAIL_FROM -e MAIL_TO \
+            titan-crawler python -m rule_engine.scheduler
 
       - name: Upload tracker artifact
         if: always()
