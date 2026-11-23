@@ -1,15 +1,6 @@
 {
-  "fetched_at": "2026-11-23T11:01:25",
+  "fetched_at": "2026-11-23T16:01:41",
   "matches": [
-    {
-      "fixture_id": 3115116,
-      "league_id": 21,
-      "league": "美职业",
-      "home": "[西1] 温哥华白浪",
-      "away": "皇家盐湖城 [西9]",
-      "kickoff": "2026-11-23T09:30:00",
-      "schedule_page": "20261122"
-    },
     {
       "fixture_id": 3036475,
       "league_id": 32,
@@ -332,6 +323,114 @@
       "home": "巴勒莫",
       "away": "南蒂罗尔",
       "kickoff": "2026-11-25T03:00:00",
+      "schedule_page": "20261124"
+    },
+    {
+      "fixture_id": 3008344,
+      "league_id": 37,
+      "league": "英冠",
+      "home": "查尔顿",
+      "away": "林肯城",
+      "kickoff": "2026-11-25T03:45:00",
+      "schedule_page": "20261124"
+    },
+    {
+      "fixture_id": 3008345,
+      "league_id": 37,
+      "league": "英冠",
+      "home": "诺维奇",
+      "away": "女王公园巡游者",
+      "kickoff": "2026-11-25T03:45:00",
+      "schedule_page": "20261124"
+    },
+    {
+      "fixture_id": 3008346,
+      "league_id": 37,
+      "league": "英冠",
+      "home": "朴茨茅斯",
+      "away": "西汉姆联",
+      "kickoff": "2026-11-25T03:45:00",
+      "schedule_page": "20261124"
+    },
+    {
+      "fixture_id": 3008347,
+      "league_id": 37,
+      "league": "英冠",
+      "home": "谢菲尔德联队",
+      "away": "南安普敦",
+      "kickoff": "2026-11-25T03:45:00",
+      "schedule_page": "20261124"
+    },
+    {
+      "fixture_id": 3008349,
+      "league_id": 37,
+      "league": "英冠",
+      "home": "布里斯托城",
+      "away": "雷克瑟姆",
+      "kickoff": "2026-11-25T03:45:00",
+      "schedule_page": "20261124"
+    },
+    {
+      "fixture_id": 3008350,
+      "league_id": 37,
+      "league": "英冠",
+      "home": "卡迪夫城",
+      "away": "普雷斯顿",
+      "kickoff": "2026-11-25T03:45:00",
+      "schedule_page": "20261124"
+    },
+    {
+      "fixture_id": 3008351,
+      "league_id": 37,
+      "league": "英冠",
+      "home": "米德尔斯堡",
+      "away": "斯旺西",
+      "kickoff": "2026-11-25T03:45:00",
+      "schedule_page": "20261124"
+    },
+    {
+      "fixture_id": 3002102,
+      "league_id": 29,
+      "league": "苏超",
+      "home": "希伯尼安",
+      "away": "邓迪FC",
+      "kickoff": "2026-11-25T03:45:00",
+      "schedule_page": "20261124"
+    },
+    {
+      "fixture_id": 3008348,
+      "league_id": 37,
+      "league": "英冠",
+      "home": "狼队",
+      "away": "德比郡",
+      "kickoff": "2026-11-25T04:00:00",
+      "schedule_page": "20261124"
+    },
+    {
+      "fixture_id": 3002105,
+      "league_id": 29,
+      "league": "苏超",
+      "home": "格拉斯哥流浪者",
+      "away": "阿伯丁",
+      "kickoff": "2026-11-25T04:00:00",
+      "schedule_page": "20261124"
+    },
+    {
+      "fixture_id": 2910989,
+      "league_id": 4,
+      "league": "巴西甲",
+      "home": "沙佩科恩斯",
+      "away": "帕尔梅拉斯",
+      "kickoff": "2026-11-25T05:00:00",
+      "schedule_page": "20261124"
+    },
+    {
+      "fixture_id": 3114688,
+      "league_id": 250,
+      "league": "哥伦甲附",
+      "home": "[秋7] 百万富翁",
+      "away": "布卡拉曼加竞技 [秋4]",
+      "kickoff": "2026-11-25T07:20:00",
       "schedule_page": "20261124"
     }
   ]
