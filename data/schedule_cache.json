@@ -1,429 +1,6 @@
 {
-  "fetched_at": "2026-11-27T16:01:17",
+  "fetched_at": "2026-11-28T11:01:23",
   "matches": [
-    {
-      "fixture_id": 3041402,
-      "league_id": 273,
-      "league": "澳超",
-      "home": "麦克阿瑟FC",
-      "away": "墨尔本城",
-      "kickoff": "2026-11-27T16:40:00",
-      "schedule_page": "20261127"
-    },
-    {
-      "fixture_id": 3085309,
-      "league_id": 766,
-      "league": "越南联",
-      "home": "南定",
-      "away": "河内公安",
-      "kickoff": "2026-11-27T19:00:00",
-      "schedule_page": "20261127"
-    },
-    {
-      "fixture_id": 3085310,
-      "league_id": 766,
-      "league": "越南联",
-      "home": "宋兰义安",
-      "away": "宁平FC",
-      "kickoff": "2026-11-27T19:00:00",
-      "schedule_page": "20261127"
-    },
-    {
-      "fixture_id": 3112676,
-      "league_id": 279,
-      "league": "伊朗超",
-      "home": "佩坎",
-      "away": "胡齐斯坦钢铁",
-      "kickoff": "2026-11-27T19:30:00",
-      "schedule_page": "20261127"
-    },
-    {
-      "fixture_id": 3112677,
-      "league_id": 279,
-      "league": "伊朗超",
-      "home": "加兹温",
-      "away": "霍拉马巴德",
-      "kickoff": "2026-11-27T19:30:00",
-      "schedule_page": "20261127"
-    },
-    {
-      "fixture_id": 3001655,
-      "league_id": 118,
-      "league": "以超",
-      "home": "马卡比迪克瓦",
-      "away": "特拉维夫工人",
-      "kickoff": "2026-11-27T20:00:00",
-      "schedule_page": "20261127"
-    },
-    {
-      "fixture_id": 3085449,
-      "league_id": 700,
-      "league": "泰超",
-      "home": "乌泰他尼",
-      "away": "四色菊联",
-      "kickoff": "2026-11-27T20:00:00",
-      "schedule_page": "20261127"
-    },
-    {
-      "fixture_id": 3047046,
-      "league_id": 292,
-      "league": "沙特联",
-      "home": "拉斯永恒(中)",
-      "away": "塞哈特海湾",
-      "kickoff": "2026-11-27T20:15:00",
-      "schedule_page": "20261127"
-    },
-    {
-      "fixture_id": 3045676,
-      "league_id": 316,
-      "league": "马来超",
-      "home": "汶莱DPMM",
-      "away": "吉兰丹红战士",
-      "kickoff": "2026-11-27T20:15:00",
-      "schedule_page": "20261127"
-    },
-    {
-      "fixture_id": 3112678,
-      "league_id": 279,
-      "league": "伊朗超",
-      "home": "阿拉克铝业",
-      "away": "波斯波利斯",
-      "kickoff": "2026-11-27T20:45:00",
-      "schedule_page": "20261127"
-    },
-    {
-      "fixture_id": 3037840,
-      "league_id": 313,
-      "league": "卡塔尔联",
-      "home": "赛利亚",
-      "away": "加拉法",
-      "kickoff": "2026-11-27T21:00:00",
-      "schedule_page": "20261127"
-    },
-    {
-      "fixture_id": 3112679,
-      "league_id": 279,
-      "league": "伊朗超",
-      "home": "胡齐斯坦独立",
-      "away": "马拉云",
-      "kickoff": "2026-11-27T21:00:00",
-      "schedule_page": "20261127"
-    },
-    {
-      "fixture_id": 3047047,
-      "league_id": 292,
-      "league": "沙特联",
-      "home": "卡达西亚(中)",
-      "away": "费哈",
-      "kickoff": "2026-11-27T22:20:00",
-      "schedule_page": "20261127"
-    },
-    {
-      "fixture_id": 3010488,
-      "league_id": 124,
-      "league": "罗甲",
-      "home": "克卢日大学",
-      "away": "圣格奥尔基塞普西",
-      "kickoff": "2026-11-27T23:30:00",
-      "schedule_page": "20261127"
-    },
-    {
-      "fixture_id": 3037842,
-      "league_id": 313,
-      "league": "卡塔尔联",
-      "home": "鲁赛尔城",
-      "away": "阿拉比SC",
-      "kickoff": "2026-11-27T23:30:00",
-      "schedule_page": "20261127"
-    },
-    {
-      "fixture_id": 2999012,
-      "league_id": 129,
-      "league": "塞尔超",
-      "home": "诺维贝尔格莱德",
-      "away": "马瑟瓦沙巴",
-      "kickoff": "2026-11-28T00:00:00",
-      "schedule_page": "20261127"
-    },
-    {
-      "fixture_id": 3026796,
-      "league_id": 30,
-      "league": "土超",
-      "home": "阿拉尼亚体育",
-      "away": "科尼亚体育",
-      "kickoff": "2026-11-28T01:00:00",
-      "schedule_page": "20261127"
-    },
-    {
-      "fixture_id": 3026803,
-      "league_id": 30,
-      "league": "土超",
-      "home": "里泽体育",
-      "away": "卡斯帕萨",
-      "kickoff": "2026-11-28T01:00:00",
-      "schedule_page": "20261127"
-    },
-    {
-      "fixture_id": 3003220,
-      "league_id": 6,
-      "league": "波兰超",
-      "home": "琴斯托霍瓦",
-      "away": "皮亚斯特",
-      "kickoff": "2026-11-28T01:00:00",
-      "schedule_page": "20261127"
-    },
-    {
-      "fixture_id": 3039949,
-      "league_id": 137,
-      "league": "捷甲",
-      "home": "阿蒂斯布尔诺",
-      "away": "斯洛瓦科",
-      "kickoff": "2026-11-28T01:00:00",
-      "schedule_page": "20261127"
-    },
-    {
-      "fixture_id": 3019200,
-      "league_id": 9,
-      "league": "德乙",
-      "home": "波鸿",
-      "away": "达姆施塔特",
-      "kickoff": "2026-11-28T01:30:00",
-      "schedule_page": "20261127"
-    },
-    {
-      "fixture_id": 3019203,
-      "league_id": 9,
-      "league": "德乙",
-      "home": "海登海姆",
-      "away": "纽伦堡",
-      "kickoff": "2026-11-28T01:30:00",
-      "schedule_page": "20261127"
-    },
-    {
-      "fixture_id": 3047045,
-      "league_id": 292,
-      "league": "沙特联",
-      "home": "吉达联合",
-      "away": "新未来城体育",
-      "kickoff": "2026-11-28T01:30:00",
-      "schedule_page": "20261127"
-    },
-    {
-      "fixture_id": 2998295,
-      "league_id": 7,
-      "league": "丹麦超",
-      "home": "桑德捷斯基",
-      "away": "布隆德比",
-      "kickoff": "2026-11-28T02:00:00",
-      "schedule_page": "20261127"
-    },
-    {
-      "fixture_id": 3010680,
-      "league_id": 3,
-      "league": "奥甲",
-      "home": "格拉茨AK",
-      "away": "阿尔塔奇",
-      "kickoff": "2026-11-28T02:30:00",
-      "schedule_page": "20261127"
-    },
-    {
-      "fixture_id": 3010487,
-      "league_id": 124,
-      "league": "罗甲",
-      "home": "佩特罗鲁",
-      "away": "阿格斯",
-      "kickoff": "2026-11-28T02:30:00",
-      "schedule_page": "20261127"
-    },
-    {
-      "fixture_id": 2996219,
-      "league_id": 16,
-      "league": "荷甲",
-      "home": "格罗宁根",
-      "away": "威廉二世",
-      "kickoff": "2026-11-28T03:00:00",
-      "schedule_page": "20261127"
-    },
-    {
-      "fixture_id": 2996564,
-      "league_id": 17,
-      "league": "荷乙",
-      "home": "多德勒支",
-      "away": "维特斯",
-      "kickoff": "2026-11-28T03:00:00",
-      "schedule_page": "20261127"
-    },
-    {
-      "fixture_id": 2996565,
-      "league_id": 17,
-      "league": "荷乙",
-      "home": "阿贾克斯青年队",
-      "away": "赫拉克勒斯",
-      "kickoff": "2026-11-28T03:00:00",
-      "schedule_page": "20261127"
-    },
-    {
-      "fixture_id": 2996566,
-      "league_id": 17,
-      "league": "荷乙",
-      "home": "阿尔克马尔青年队",
-      "away": "奥斯",
-      "kickoff": "2026-11-28T03:00:00",
-      "schedule_page": "20261127"
-    },
-    {
-      "fixture_id": 2996567,
-      "league_id": 17,
-      "league": "荷乙",
-      "home": "乌德勒支青年队",
-      "away": "阿尔梅勒城",
-      "kickoff": "2026-11-28T03:00:00",
-      "schedule_page": "20261127"
-    },
-    {
-      "fixture_id": 2996568,
-      "league_id": 17,
-      "league": "荷乙",
-      "home": "马斯特里赫特",
-      "away": "埃因霍温青年队",
-      "kickoff": "2026-11-28T03:00:00",
-      "schedule_page": "20261127"
-    },
-    {
-      "fixture_id": 2996569,
-      "league_id": 17,
-      "league": "荷乙",
-      "home": "布雷达",
-      "away": "邓伯什",
-      "kickoff": "2026-11-28T03:00:00",
-      "schedule_page": "20261127"
-    },
-    {
-      "fixture_id": 2996570,
-      "league_id": 17,
-      "league": "荷乙",
-      "home": "芬洛",
-      "away": "瓦尔韦克",
-      "kickoff": "2026-11-28T03:00:00",
-      "schedule_page": "20261127"
-    },
-    {
-      "fixture_id": 3018884,
-      "league_id": 8,
-      "league": "德甲",
-      "home": "云达不莱梅",
-      "away": "门兴格拉德巴赫",
-      "kickoff": "2026-11-28T03:30:00",
-      "schedule_page": "20261127"
-    },
-    {
-      "fixture_id": 3014193,
-      "league_id": 33,
-      "league": "西乙",
-      "home": "莱加内斯",
-      "away": "萨瓦德尔",
-      "kickoff": "2026-11-28T03:30:00",
-      "schedule_page": "20261127"
-    },
-    {
-      "fixture_id": 3003215,
-      "league_id": 6,
-      "league": "波兰超",
-      "home": "扎布热矿工",
-      "away": "普沃茨克维斯瓦",
-      "kickoff": "2026-11-28T03:30:00",
-      "schedule_page": "20261127"
-    },
-    {
-      "fixture_id": 2993884,
-      "league_id": 34,
-      "league": "意甲",
-      "home": "威尼斯",
-      "away": "博洛尼亚",
-      "kickoff": "2026-11-28T03:45:00",
-      "schedule_page": "20261127"
-    },
-    {
-      "fixture_id": 2995409,
-      "league_id": 11,
-      "league": "法甲",
-      "home": "布雷斯特",
-      "away": "巴黎FC",
-      "kickoff": "2026-11-28T03:45:00",
-      "schedule_page": "20261127"
-    },
-    {
-      "fixture_id": 3003632,
-      "league_id": 5,
-      "league": "比甲",
-      "home": "旧海弗莱鲁汶",
-      "away": "科特赖克",
-      "kickoff": "2026-11-28T03:45:00",
-      "schedule_page": "20261127"
-    },
-    {
-      "fixture_id": 3003967,
-      "league_id": 36,
-      "league": "英超",
-      "home": "诺丁汉森林",
-      "away": "切尔西",
-      "kickoff": "2026-11-28T04:00:00",
-      "schedule_page": "20261127"
-    },
-    {
-      "fixture_id": 3013777,
-      "league_id": 31,
-      "league": "西甲",
-      "home": "莱万特",
-      "away": "桑坦德竞技",
-      "kickoff": "2026-11-28T04:00:00",
-      "schedule_page": "20261127"
-    },
-    {
-      "fixture_id": 3008363,
-      "league_id": 37,
-      "league": "英冠",
-      "home": "南安普敦",
-      "away": "米德尔斯堡",
-      "kickoff": "2026-11-28T04:00:00",
-      "schedule_page": "20261127"
-    },
-    {
-      "fixture_id": 3023536,
-      "league_id": 23,
-      "league": "葡超",
-      "home": "马里迪莫",
-      "away": "葡萄牙国民",
-      "kickoff": "2026-11-28T04:15:00",
-      "schedule_page": "20261127"
-    },
-    {
-      "fixture_id": 2910992,
-      "league_id": 4,
-      "league": "巴西甲",
-      "home": "弗鲁米嫩塞",
-      "away": "克鲁塞罗",
-      "kickoff": "2026-11-28T07:00:00",
-      "schedule_page": "20261127"
-    },
-    {
-      "fixture_id": 3116143,
-      "league_id": 250,
-      "league": "哥伦甲附",
-      "home": "[秋3] 卡利体育会",
-      "away": "布卡拉曼加竞技 [秋4]",
-      "kickoff": "2026-11-28T07:35:00",
-      "schedule_page": "20261127"
-    },
-    {
-      "fixture_id": 3111671,
-      "league_id": 21,
-      "league": "美职业",
-      "home": "[东7] 哥伦布机员",
-      "away": "迈阿密国际 [东2]",
-      "kickoff": "2026-11-28T09:00:00",
-      "schedule_page": "20261127"
-    },
     {
       "fixture_id": 3116144,
       "league_id": 250,
@@ -758,15 +335,6 @@
       "schedule_page": "20261128"
     },
     {
-      "fixture_id": 3112681,
-      "league_id": 279,
-      "league": "伊朗超",
-      "home": "德黑兰独立",
-      "away": "纳夫特",
-      "kickoff": "2026-11-28T20:45:00",
-      "schedule_page": "20261128"
-    },
-    {
       "fixture_id": 3013772,
       "league_id": 31,
       "league": "西甲",
@@ -821,12 +389,30 @@
       "schedule_page": "20261128"
     },
     {
+      "fixture_id": 2999017,
+      "league_id": 129,
+      "league": "塞尔超",
+      "home": "泽蒙",
+      "away": "拉尼奇1923",
+      "kickoff": "2026-11-28T21:00:00",
+      "schedule_page": "20261128"
+    },
+    {
       "fixture_id": 3012356,
       "league_id": 10,
       "league": "俄超",
       "home": "莫斯科中央陆军",
       "away": "圣彼得堡泽尼特",
       "kickoff": "2026-11-28T21:30:00",
+      "schedule_page": "20261128"
+    },
+    {
+      "fixture_id": 3112681,
+      "league_id": 279,
+      "league": "伊朗超",
+      "home": "德黑兰独立",
+      "away": "纳夫特",
+      "kickoff": "2026-11-28T21:45:00",
       "schedule_page": "20261128"
     },
     {
@@ -1193,7 +779,7 @@
       "fixture_id": 3037839,
       "league_id": 313,
       "league": "卡塔尔联",
-      "home": "多哈国民",
+      "home": "多哈国民(中)",
       "away": "杜海勒",
       "kickoff": "2026-11-28T23:30:00",
       "schedule_page": "20261128"
@@ -1321,15 +907,6 @@
       "league": "捷甲",
       "home": "赫拉德茨克拉洛韦",
       "away": "波希米亚1905",
-      "kickoff": "2026-11-29T01:00:00",
-      "schedule_page": "20261128"
-    },
-    {
-      "fixture_id": 2999017,
-      "league_id": 129,
-      "league": "塞尔超",
-      "home": "泽蒙",
-      "away": "拉尼奇1923",
       "kickoff": "2026-11-29T01:00:00",
       "schedule_page": "20261128"
     },
@@ -1647,6 +1224,1086 @@
       "away": "巴伊亚",
       "kickoff": "2026-11-29T08:00:00",
       "schedule_page": "20261128"
+    },
+    {
+      "fixture_id": 3116141,
+      "league_id": 250,
+      "league": "哥伦甲附",
+      "home": "[秋5] 圣塔菲",
+      "away": "国民竞技 [秋1]",
+      "kickoff": "2026-11-29T08:30:00",
+      "schedule_page": "20261128"
+    },
+    {
+      "fixture_id": 3116430,
+      "league_id": 2,
+      "league": "阿甲",
+      "home": "科尔多瓦学院",
+      "away": "河床",
+      "kickoff": "2026-11-29T09:00:00",
+      "schedule_page": "20261128"
+    },
+    {
+      "fixture_id": 3116377,
+      "league_id": 140,
+      "league": "墨西联附",
+      "home": "[秋4] 阿特拉斯",
+      "away": "托卢卡 [秋5]",
+      "kickoff": "2026-11-29T09:00:00",
+      "schedule_page": "20261128"
+    },
+    {
+      "fixture_id": 3111668,
+      "league_id": 21,
+      "league": "美职业",
+      "home": "[西6] 洛杉矶FC",
+      "away": "圣路易斯城 [西3]",
+      "kickoff": "2026-11-29T09:30:00",
+      "schedule_page": "20261128"
+    },
+    {
+      "fixture_id": 3116378,
+      "league_id": 140,
+      "league": "墨西联附",
+      "home": "[秋3] 墨西哥美洲",
+      "away": "蒙特雷 [秋6]",
+      "kickoff": "2026-11-29T11:10:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3111670,
+      "league_id": 21,
+      "league": "美职业",
+      "home": "[西7] 波特兰伐木者",
+      "away": "达拉斯FC [西2]",
+      "kickoff": "2026-11-29T11:30:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3000211,
+      "league_id": 284,
+      "league": "日职乙",
+      "home": "八户云罗里",
+      "away": "藤枝MYFC",
+      "kickoff": "2026-11-29T12:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3000558,
+      "league_id": 25,
+      "league": "日职联",
+      "home": "水户蜀葵",
+      "away": "长崎成功丸",
+      "kickoff": "2026-11-29T13:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3000562,
+      "league_id": 25,
+      "league": "日职联",
+      "home": "横滨水手",
+      "away": "FC东京",
+      "kickoff": "2026-11-29T13:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3000203,
+      "league_id": 284,
+      "league": "日职乙",
+      "home": "新潟天鹅",
+      "away": "甲府风林",
+      "kickoff": "2026-11-29T13:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3000204,
+      "league_id": 284,
+      "league": "日职乙",
+      "home": "秋田蓝色闪电",
+      "away": "横滨FC",
+      "kickoff": "2026-11-29T13:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3000206,
+      "league_id": 284,
+      "league": "日职乙",
+      "home": "磐田喜悦",
+      "away": "枥木市FC",
+      "kickoff": "2026-11-29T13:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3000207,
+      "league_id": 284,
+      "league": "日职乙",
+      "home": "大分三神",
+      "away": "德岛漩涡",
+      "kickoff": "2026-11-29T13:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3000209,
+      "league_id": 284,
+      "league": "日职乙",
+      "home": "湘南海洋",
+      "away": "富山胜利",
+      "kickoff": "2026-11-29T13:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3000210,
+      "league_id": 284,
+      "league": "日职乙",
+      "home": "宫崎棒牛鸟",
+      "away": "鸟栖沙岩",
+      "kickoff": "2026-11-29T13:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3000212,
+      "league_id": 284,
+      "league": "日职乙",
+      "home": "仙台维加泰",
+      "away": "山形山神",
+      "kickoff": "2026-11-29T13:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3107498,
+      "league_id": 15,
+      "league": "韩K联冠",
+      "home": "蔚山HD",
+      "away": "全北现代",
+      "kickoff": "2026-11-29T13:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3000555,
+      "league_id": 25,
+      "league": "日职联",
+      "home": "川崎前锋",
+      "away": "大阪钢巴",
+      "kickoff": "2026-11-29T14:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3000559,
+      "league_id": 25,
+      "league": "日职联",
+      "home": "名古屋鲸八",
+      "away": "福冈黄蜂",
+      "kickoff": "2026-11-29T14:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3000205,
+      "league_id": 284,
+      "league": "日职乙",
+      "home": "磐城FC",
+      "away": "札幌冈萨多",
+      "kickoff": "2026-11-29T14:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3000557,
+      "league_id": 25,
+      "league": "日职联",
+      "home": "町田泽维亚",
+      "away": "东京绿茵",
+      "kickoff": "2026-11-29T15:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3107499,
+      "league_id": 15,
+      "league": "韩K联冠",
+      "home": "仁川联",
+      "away": "江原FC",
+      "kickoff": "2026-11-29T15:30:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3062918,
+      "league_id": 1122,
+      "league": "印尼超",
+      "home": "马兰",
+      "away": "帕尔斯巴亚",
+      "kickoff": "2026-11-29T16:30:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3062919,
+      "league_id": 1122,
+      "league": "印尼超",
+      "home": "培斯塔坦格朗",
+      "away": "万隆",
+      "kickoff": "2026-11-29T16:30:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3012361,
+      "league_id": 10,
+      "league": "俄超",
+      "home": "奥伦堡加索维克",
+      "away": "罗迪纳莫斯科",
+      "kickoff": "2026-11-29T18:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3085314,
+      "league_id": 766,
+      "league": "越南联",
+      "home": "清化",
+      "away": "同奈长鲜",
+      "kickoff": "2026-11-29T18:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3026798,
+      "league_id": 30,
+      "league": "土超",
+      "home": "科鲁姆",
+      "away": "科贾埃利体育",
+      "kickoff": "2026-11-29T18:30:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3085315,
+      "league_id": 766,
+      "league": "越南联",
+      "home": "海防水泥队",
+      "away": "越电信",
+      "kickoff": "2026-11-29T19:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3085443,
+      "league_id": 700,
+      "league": "泰超",
+      "home": "素可泰",
+      "away": "曼谷联合队",
+      "kickoff": "2026-11-29T19:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 2996216,
+      "league_id": 16,
+      "league": "荷甲",
+      "home": "海牙",
+      "away": "乌德勒支",
+      "kickoff": "2026-11-29T19:15:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 2996572,
+      "league_id": 17,
+      "league": "荷乙",
+      "home": "福伦丹",
+      "away": "FC埃因霍温",
+      "kickoff": "2026-11-29T19:15:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 2993883,
+      "league_id": 34,
+      "league": "意甲",
+      "home": "乌迪内斯",
+      "away": "佛罗伦萨",
+      "kickoff": "2026-11-29T19:30:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3085445,
+      "league_id": 700,
+      "league": "泰超",
+      "home": "阿尤塔亚联",
+      "away": "罗勇",
+      "kickoff": "2026-11-29T19:30:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3003962,
+      "league_id": 36,
+      "league": "英超",
+      "home": "埃弗顿",
+      "away": "利物浦",
+      "kickoff": "2026-11-29T20:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3008366,
+      "league_id": 37,
+      "league": "英冠",
+      "home": "斯旺西",
+      "away": "卡迪夫城",
+      "kickoff": "2026-11-29T20:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3039951,
+      "league_id": 137,
+      "league": "捷甲",
+      "home": "布拉格斯拉维亚",
+      "away": "俄斯特拉发",
+      "kickoff": "2026-11-29T20:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3085450,
+      "league_id": 700,
+      "league": "泰超",
+      "home": "狮子港",
+      "away": "巴蜀府",
+      "kickoff": "2026-11-29T20:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3062920,
+      "league_id": 1122,
+      "league": "印尼超",
+      "home": "婆罗洲FC",
+      "away": "佩斯克",
+      "kickoff": "2026-11-29T20:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3012358,
+      "league_id": 10,
+      "league": "俄超",
+      "home": "罗斯托夫",
+      "away": "克拉斯诺达尔",
+      "kickoff": "2026-11-29T20:15:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3019201,
+      "league_id": 9,
+      "league": "德乙",
+      "home": "布伦瑞克",
+      "away": "沃尔夫斯堡",
+      "kickoff": "2026-11-29T20:30:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3019202,
+      "league_id": 9,
+      "league": "德乙",
+      "home": "菲尔特",
+      "away": "比勒菲尔德",
+      "kickoff": "2026-11-29T20:30:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3019206,
+      "league_id": 9,
+      "league": "德乙",
+      "home": "马格德堡",
+      "away": "科特布斯",
+      "kickoff": "2026-11-29T20:30:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3003636,
+      "league_id": 5,
+      "league": "比甲",
+      "home": "圣图尔登",
+      "away": "亨克",
+      "kickoff": "2026-11-29T20:30:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3013781,
+      "league_id": 31,
+      "league": "西甲",
+      "home": "巴伦西亚",
+      "away": "奥萨苏纳",
+      "kickoff": "2026-11-29T21:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3014192,
+      "league_id": 33,
+      "league": "西乙",
+      "home": "格拉纳达",
+      "away": "休达",
+      "kickoff": "2026-11-29T21:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3000858,
+      "league_id": 27,
+      "league": "瑞士超",
+      "home": "卢塞恩",
+      "away": "卢加诺",
+      "kickoff": "2026-11-29T21:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3026799,
+      "league_id": 30,
+      "league": "土超",
+      "home": "埃于普体育",
+      "away": "伊斯坦布尔巴萨克塞尔",
+      "kickoff": "2026-11-29T21:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3010486,
+      "league_id": 124,
+      "league": "罗甲",
+      "home": "加拉茨钢铁",
+      "away": "阿拉德联队",
+      "kickoff": "2026-11-29T21:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3037844,
+      "league_id": 313,
+      "league": "卡塔尔联",
+      "home": "艾沙姆",
+      "away": "赖扬",
+      "kickoff": "2026-11-29T21:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 2998291,
+      "league_id": 7,
+      "league": "丹麦超",
+      "home": "利恩比",
+      "away": "维堡",
+      "kickoff": "2026-11-29T21:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 2998293,
+      "league_id": 7,
+      "league": "丹麦超",
+      "home": "兰讷斯",
+      "away": "霍森斯",
+      "kickoff": "2026-11-29T21:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3045679,
+      "league_id": 316,
+      "league": "马来超",
+      "home": "马来星城",
+      "away": "吉隆坡",
+      "kickoff": "2026-11-29T21:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 2996218,
+      "league_id": 16,
+      "league": "荷甲",
+      "home": "费耶诺德",
+      "away": "阿贾克斯",
+      "kickoff": "2026-11-29T21:30:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 2996222,
+      "league_id": 16,
+      "league": "荷甲",
+      "home": "福图纳锡塔德",
+      "away": "海伦芬",
+      "kickoff": "2026-11-29T21:30:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3010681,
+      "league_id": 3,
+      "league": "奥甲",
+      "home": "里德",
+      "away": "哈特堡格",
+      "kickoff": "2026-11-29T21:30:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3010683,
+      "league_id": 3,
+      "league": "奥甲",
+      "home": "格拉茨风暴",
+      "away": "WSG蒂罗尔",
+      "kickoff": "2026-11-29T21:30:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 2912948,
+      "league_id": 22,
+      "league": "挪超",
+      "home": "腓特烈斯塔",
+      "away": "奥勒松",
+      "kickoff": "2026-11-29T21:30:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3003218,
+      "league_id": 6,
+      "league": "波兰超",
+      "home": "波兹南莱赫",
+      "away": "什切青",
+      "kickoff": "2026-11-29T21:45:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 2993881,
+      "league_id": 34,
+      "league": "意甲",
+      "home": "萨索洛",
+      "away": "那不勒斯",
+      "kickoff": "2026-11-29T22:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 2995408,
+      "league_id": 11,
+      "league": "法甲",
+      "home": "欧塞尔",
+      "away": "马赛",
+      "kickoff": "2026-11-29T22:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3040841,
+      "league_id": 40,
+      "league": "意乙",
+      "home": "摩德纳",
+      "away": "帕多瓦",
+      "kickoff": "2026-11-29T22:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3040844,
+      "league_id": 40,
+      "league": "意乙",
+      "home": "南蒂罗尔",
+      "away": "曼托瓦",
+      "kickoff": "2026-11-29T22:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 2912339,
+      "league_id": 26,
+      "league": "瑞典超",
+      "home": "代格福什",
+      "away": "奥尔格里特",
+      "kickoff": "2026-11-29T22:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 2912340,
+      "league_id": 26,
+      "league": "瑞典超",
+      "home": "尤尔加登",
+      "away": "赫根",
+      "kickoff": "2026-11-29T22:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 2912341,
+      "league_id": 26,
+      "league": "瑞典超",
+      "home": "埃尔夫斯堡",
+      "away": "哥德堡盖斯",
+      "kickoff": "2026-11-29T22:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 2912342,
+      "league_id": 26,
+      "league": "瑞典超",
+      "home": "哥德堡",
+      "away": "天狼星",
+      "kickoff": "2026-11-29T22:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 2912343,
+      "league_id": 26,
+      "league": "瑞典超",
+      "home": "哈尔姆斯塔德",
+      "away": "米亚尔比",
+      "kickoff": "2026-11-29T22:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 2912344,
+      "league_id": 26,
+      "league": "瑞典超",
+      "home": "卡尔马",
+      "away": "索尔纳",
+      "kickoff": "2026-11-29T22:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 2912345,
+      "league_id": 26,
+      "league": "瑞典超",
+      "home": "马尔默",
+      "away": "布洛马波卡纳",
+      "kickoff": "2026-11-29T22:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 2912346,
+      "league_id": 26,
+      "league": "瑞典超",
+      "home": "瓦斯特拉斯",
+      "away": "哈马比",
+      "kickoff": "2026-11-29T22:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3039946,
+      "league_id": 137,
+      "league": "捷甲",
+      "home": "布尔诺",
+      "away": "比尔森胜利",
+      "kickoff": "2026-11-29T22:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3039948,
+      "league_id": 137,
+      "league": "捷甲",
+      "home": "亚布洛内茨",
+      "away": "帕尔杜比斯",
+      "kickoff": "2026-11-29T22:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3003960,
+      "league_id": 36,
+      "league": "英超",
+      "home": "布莱顿",
+      "away": "纽卡斯尔联",
+      "kickoff": "2026-11-29T22:05:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3003961,
+      "league_id": 36,
+      "league": "英超",
+      "home": "水晶宫",
+      "away": "赫尔城",
+      "kickoff": "2026-11-29T22:05:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3003963,
+      "league_id": 36,
+      "league": "英超",
+      "home": "富勒姆",
+      "away": "伯恩茅斯",
+      "kickoff": "2026-11-29T22:05:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3003968,
+      "league_id": 36,
+      "league": "英超",
+      "home": "桑德兰",
+      "away": "托特纳姆热刺",
+      "kickoff": "2026-11-29T22:05:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3018878,
+      "league_id": 8,
+      "league": "德甲",
+      "home": "弗赖堡",
+      "away": "RB莱比锡",
+      "kickoff": "2026-11-29T22:30:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3012359,
+      "league_id": 10,
+      "league": "俄超",
+      "home": "苏维埃之翼",
+      "away": "莫斯科迪纳摩",
+      "kickoff": "2026-11-29T22:30:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 2999013,
+      "league_id": 129,
+      "league": "塞尔超",
+      "home": "诺维帕扎尔",
+      "away": "贝尔格莱德红星",
+      "kickoff": "2026-11-29T22:30:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3003630,
+      "league_id": 5,
+      "league": "比甲",
+      "home": "安特卫普",
+      "away": "安德莱赫特",
+      "kickoff": "2026-11-29T23:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3002120,
+      "league_id": 29,
+      "league": "苏超",
+      "home": "哈茨",
+      "away": "凯尔特人",
+      "kickoff": "2026-11-29T23:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3036484,
+      "league_id": 32,
+      "league": "希腊超",
+      "home": "阿特罗米托斯",
+      "away": "帕纳辛纳科斯",
+      "kickoff": "2026-11-29T23:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 2998290,
+      "league_id": 7,
+      "league": "丹麦超",
+      "home": "哥本哈根",
+      "away": "中日德兰",
+      "kickoff": "2026-11-29T23:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3013774,
+      "league_id": 31,
+      "league": "西甲",
+      "home": "拉科鲁尼亚",
+      "away": "巴塞罗那",
+      "kickoff": "2026-11-29T23:15:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3014194,
+      "league_id": 33,
+      "league": "西乙",
+      "home": "马洛卡",
+      "away": "卡斯特利翁",
+      "kickoff": "2026-11-29T23:15:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3000860,
+      "league_id": 27,
+      "league": "瑞士超",
+      "home": "锡永",
+      "away": "年轻人",
+      "kickoff": "2026-11-29T23:30:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3000861,
+      "league_id": 27,
+      "league": "瑞士超",
+      "home": "图恩",
+      "away": "圣加仑",
+      "kickoff": "2026-11-29T23:30:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3036487,
+      "league_id": 32,
+      "league": "希腊超",
+      "home": "OFI克里特",
+      "away": "莱瓦贾科斯",
+      "kickoff": "2026-11-29T23:30:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3037843,
+      "league_id": 313,
+      "league": "卡塔尔联",
+      "home": "卡塔尔体育",
+      "away": "艾沙哈尼亚",
+      "kickoff": "2026-11-29T23:30:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 2996223,
+      "league_id": 16,
+      "league": "荷甲",
+      "home": "兹沃勒",
+      "away": "阿尔克马尔",
+      "kickoff": "2026-11-29T23:45:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 2996573,
+      "league_id": 17,
+      "league": "荷乙",
+      "home": "罗达JC",
+      "away": "格拉夫夏普",
+      "kickoff": "2026-11-29T23:45:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3010682,
+      "league_id": 3,
+      "league": "奥甲",
+      "home": "萨尔茨堡",
+      "away": "LASK林茨",
+      "kickoff": "2026-11-30T00:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 2912947,
+      "league_id": 22,
+      "league": "挪超",
+      "home": "布兰",
+      "away": "克里斯蒂安松",
+      "kickoff": "2026-11-30T00:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 2912951,
+      "league_id": 22,
+      "league": "挪超",
+      "home": "桑德菲杰",
+      "away": "特罗姆瑟",
+      "kickoff": "2026-11-30T00:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 2912952,
+      "league_id": 22,
+      "league": "挪超",
+      "home": "斯达",
+      "away": "萨普斯堡",
+      "kickoff": "2026-11-30T00:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3026800,
+      "league_id": 30,
+      "league": "土超",
+      "home": "费内巴切",
+      "away": "埃尔祖鲁姆体育",
+      "kickoff": "2026-11-30T00:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 2999016,
+      "league_id": 129,
+      "league": "塞尔超",
+      "home": "泽伦斯尼卡潘切沃",
+      "away": "OFK贝尔格莱德",
+      "kickoff": "2026-11-30T00:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 2995415,
+      "league_id": 11,
+      "league": "法甲",
+      "home": "图卢兹",
+      "away": "雷恩",
+      "kickoff": "2026-11-30T00:15:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3040843,
+      "league_id": 40,
+      "league": "意乙",
+      "home": "桑普多利亚",
+      "away": "克雷莫纳",
+      "kickoff": "2026-11-30T00:15:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3003959,
+      "league_id": 36,
+      "league": "英超",
+      "home": "阿森纳",
+      "away": "曼彻斯特城",
+      "kickoff": "2026-11-30T00:30:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3018880,
+      "league_id": 8,
+      "league": "德甲",
+      "home": "霍芬海姆",
+      "away": "奥格斯堡",
+      "kickoff": "2026-11-30T00:30:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3003219,
+      "league_id": 6,
+      "league": "波兰超",
+      "home": "华沙莱吉亚",
+      "away": "KS莫摩斯",
+      "kickoff": "2026-11-30T00:30:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3012360,
+      "league_id": 10,
+      "league": "俄超",
+      "home": "莫斯科火车头",
+      "away": "马哈奇卡拉",
+      "kickoff": "2026-11-30T00:45:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 2993875,
+      "league_id": 34,
+      "league": "意甲",
+      "home": "罗马",
+      "away": "蒙扎",
+      "kickoff": "2026-11-30T01:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3036483,
+      "league_id": 32,
+      "league": "希腊超",
+      "home": "阿里斯",
+      "away": "奥林匹亚科斯",
+      "kickoff": "2026-11-30T01:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 2998294,
+      "league_id": 7,
+      "league": "丹麦超",
+      "home": "锡尔克堡",
+      "away": "奥胡斯",
+      "kickoff": "2026-11-30T01:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3039953,
+      "league_id": 137,
+      "league": "捷甲",
+      "home": "兹林",
+      "away": "布拉格斯巴达",
+      "kickoff": "2026-11-30T01:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3013773,
+      "league_id": 31,
+      "league": "西甲",
+      "home": "塞尔塔",
+      "away": "比利亚雷亚尔",
+      "kickoff": "2026-11-30T01:30:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3014189,
+      "league_id": 33,
+      "league": "西乙",
+      "home": "加的斯",
+      "away": "科尔多瓦",
+      "kickoff": "2026-11-30T01:30:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3003629,
+      "league_id": 5,
+      "league": "比甲",
+      "home": "标准列日",
+      "away": "布鲁日",
+      "kickoff": "2026-11-30T01:30:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3023535,
+      "league_id": 23,
+      "league": "葡超",
+      "home": "吉维森特",
+      "away": "埃斯托里尔",
+      "kickoff": "2026-11-30T02:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3010483,
+      "league_id": 124,
+      "league": "罗甲",
+      "home": "布加勒斯特快速",
+      "away": "博托沙尼",
+      "kickoff": "2026-11-30T02:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3003637,
+      "league_id": 5,
+      "league": "比甲",
+      "home": "圣吉罗斯",
+      "away": "根特",
+      "kickoff": "2026-11-30T02:15:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 2912953,
+      "league_id": 22,
+      "league": "挪超",
+      "home": "维京",
+      "away": "瓦勒伦加",
+      "kickoff": "2026-11-30T02:15:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3018876,
+      "league_id": 8,
+      "league": "德甲",
+      "home": "多特蒙德",
+      "away": "勒沃库森",
+      "kickoff": "2026-11-30T02:30:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3040835,
+      "league_id": 40,
+      "league": "意乙",
+      "home": "阿雷佐",
+      "away": "比萨",
+      "kickoff": "2026-11-30T02:30:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 2996220,
+      "league_id": 16,
+      "league": "荷甲",
+      "home": "奈梅亨",
+      "away": "特温特",
+      "kickoff": "2026-11-30T03:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 3036482,
+      "league_id": 32,
+      "league": "希腊超",
+      "home": "AEK雅典",
+      "away": "塞萨洛尼基",
+      "kickoff": "2026-11-30T03:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 2910991,
+      "league_id": 4,
+      "league": "巴西甲",
+      "home": "科里蒂巴",
+      "away": "弗拉门戈",
+      "kickoff": "2026-11-30T03:00:00",
+      "schedule_page": "20261129"
+    },
+    {
+      "fixture_id": 2910996,
+      "league_id": 4,
+      "league": "巴西甲",
+      "home": "维多利亚",
+      "away": "桑托斯",
+      "kickoff": "2026-11-30T03:00:00",
+      "schedule_page": "20261129"
     }
   ]
 }
